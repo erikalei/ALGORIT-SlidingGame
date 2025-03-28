@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sliding Puzzle Game</title>
+    <style>
+        /* Your existing styles... */
+        body {
+            font-family: 'Poppins', sans-serif;
+            text-align: center;
+            background: #1e1e2e;
+            color: white;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .hidden { display: none; }
+        .container { margin: 20px auto; width: fit-content; }
+
+        .grid {
+            display: grid;
+            gap: 5px;
+            background: #2a2a3b;
+            padding: 10px;
+            border-radius: 15px;
+            margin: auto;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .tile {
+            width: 80px;
+            height: 80px;
+            font-size: 24px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #4b79a1, #283e51);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            cursor: pointer;
+            color: white;
+            transition: all 0.2s;
+        }
+
+        .tile:hover { background: #5f92bf; }
+        .empty { background: transparent; cursor: default; }
+
+        .button {
+            padding: 12px 24px;
+            margin: 8px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            background: #ff6b6b;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .button:hover { background: #ff4f4f; }
+
+        .button:disabled {
+            background: #555;
+            cursor: not-allowed;
+        }
+
+        .hint {
+            background: #27ae60;
+        }
+
+        .hint:hover {
+            background: #1e8449;
+        }
+
+        #difficulty-buttons {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px; /* Spacing between buttons */
+        }
+
+        .button {
+            padding: 12px 24px;
+            margin: 5px 0; /* Adjusted margin for vertical alignment */
+            font-size: 20px; /* Increased font size */
+            border: none;
+            border-radius: 8px;
+            background: #ff6b6b;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 200px; /* Ensure consistent button width */
+            text-align: center;
+        }
+
+        .button:hover {
+            background: #ff4f4f;
+        }
+
+        .empty:hover {
+            background: transparent !important;
+            cursor: default !important;
+        }
+
+        .hint-tile {
+            border: 2px solid #ffeb3b; /* Highlight hint tile */
+        }
+    </style>
+</head>
+<body>
+    <div id="welcome-screen">
+        <h2>Welcome to Sliding Puzzle Game</h2>
+        <p>Select Difficulty:</p>
+        <div id="difficulty-buttons">
+            <button class="button" onclick="selectDifficulty('easy')">Easy</button>
+            <button class="button" onclick="selectDifficulty('medium')">Medium</button>
+            <button class="button" onclick="selectDifficulty('hard')">Hard</button>
+        </div>
+    </div>
+
+    <div id="levels-screen" class="hidden">
+        <h2>Select Level</h2>
+        <div id="levels"></div>
+    </div>
+
+    <div id="game-screen" class="hidden">
+        <h2>Sliding Puzzle Game</h2>
+        <p>Score: <span id="score">0</span></p>
+        <p>Moves: <span id="move-counter">0</span></p>
+        <p>Time: <span id="timer">0</span> seconds</p>
+        <div class="container">
+            <div id="grid" class="grid"></div>
+        </div>
+        <button class="button" onclick="showHint()">Show Hint</button>
+        <button class="button" onclick="resetGame()">Reset Game</button>
+    </div>
+
+    <script>
+        let difficulty = "easy";
+        let currentLevel = 1;
+        let maxLevel = 5;
+        let gridSize;
+        let tiles = [];
+        let emptyTile;
+        let completedLevels = 1;
+        let score = 0;
+        let moveCounter = 0;
+        let timer;
+        let timeElapsed = 0;
+
+        function selectDifficulty(selected) {
+            difficulty = selected;
+            document.getElementById("welcome-screen").classList.add("hidden");
+            document.getElementById("levels-screen").classList.remove("hidden");
+            showLevels();
+        }
+
+        function showLevels() {
+            let levelsDiv = document.getElementById("levels");
+            levelsDiv.innerHTML = "";
+            for (let i = 1; i <= maxLevel; i++) {
+                let button = document.createElement("button");
+                button.innerText = `Level ${i}`;
+                button.classList.add("button");
+                button.disabled = i > completedLevels;
+                button.onclick = () => startGame(i);
+                levelsDiv.appendChild(button);
+            }
+        }
+
+        function startGame(level) {
+            currentLevel = level;
+            gridSize = level + 2;
+            document.getElementById("levels-screen").classList.add("hidden");
+            document.getElementById("game-screen").classList.remove("hidden");
+            initGrid();
+            startTimer();
+        }
+
+        function initGrid() {
+            let grid = document.getElementById("grid");
+            grid.innerHTML = "";
+            grid.style.gridTemplateColumns = `repeat(${gridSize}, 100px)`;
+            grid.style.gridTemplateRows = `repeat(${gridSize}, 100px)`;
+
+            tiles = [];
+            let numbers = Array.from({ length: gridSize * gridSize }, (_, i) => i);
+            shuffleArray(numbers);
+
+            numbers.forEach((num, index) => {
+                let tile = document.createElement("div");
+                tile.classList.add("tile");
+                if (num === 0) {
+                    tile.classList.add("empty");
+                    emptyTile = { index, element: tile };
+                } else {
+                    tile.innerText = num;
+                    tile.onclick = () => moveTile(index);
+                }
+                tiles.push(tile);
+                grid.appendChild(tile);
+            });
+        }
+
+        function moveTile(index) {
+            let row = Math.floor(index / gridSize);
+            let col = index % gridSize;
+            let emptyRow = Math.floor(emptyTile.index / gridSize);
+            let emptyCol = emptyTile.index % gridSize;
+
+            if ((Math.abs(row - emptyRow) === 1 && col === emptyCol) || (Math.abs(col - emptyCol) === 1 && row === emptyRow)) {
+                swapTiles(index, emptyTile.index);
+                moveCounter++;
+                document.getElementById("move-counter").innerText = moveCounter;
+                score++;
+                document.getElementById("score").innerText = score;
+            }
+        }
+
+        function swapTiles(tileIndex, emptyIndex) {
+            let tempText = tiles[tileIndex].innerText;
+            tiles[tileIndex].innerText = ""; 
+            tiles[tileIndex].classList.add("empty"); 
+
+            tiles[emptyIndex].innerText = tempText; 
+            tiles[emptyIndex].classList.remove("empty"); 
+
+            emptyTile.index = tileIndex; 
+            emptyTile.element = tiles[tileIndex]; 
+
+            tiles[tileIndex].onclick = () => moveTile(tileIndex); 
+            tiles[emptyIndex].onclick = () => moveTile(emptyIndex); 
+
+            checkWin(); 
+        }
+
+        function checkWin() {
+            for (let i = 0; i < tiles.length - 1; i++) {
+                if (tiles[i].innerText != i + 1) return;
+            }
+            clearInterval(timer); 
+            alert(`Congratulations! You solved the puzzle in ${timeElapsed} seconds and ${moveCounter} moves!`);
+            completedLevels = Math.max(completedLevels, currentLevel + 1);
+            document.getElementById("game-screen").classList.add("hidden");
+            document.getElementById("levels-screen").classList.remove("hidden");
+            showLevels();
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                let j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function resetGame() {
+            score = 0; 
+            moveCounter = 0; 
+            timeElapsed = 0; 
+            document.getElementById("score").innerText = score; 
+            document.getElementById("move-counter").innerText = moveCounter; 
+            document.getElementById("timer").innerText = timeElapsed; 
+            clearInterval(timer); 
+            initGrid(); 
+        }
+
+        function startTimer() {
+            timeElapsed = 0; 
+            document.getElementById("timer").innerText = timeElapsed; 
+            timer = setInterval(() => {
+                timeElapsed++;
+                document.getElementById("timer").innerText = timeElapsed; 
+            }, 1000); 
+        }
+
+        function showHint() {
+            let emptyRow = Math.floor(emptyTile.index / gridSize);
+            let emptyCol = emptyTile.index % gridSize;
+            let possibleMoves = [
+                { row: emptyRow - 1, col: emptyCol }, 
+                { row: emptyRow + 1, col: emptyCol }, 
+                { row: emptyRow, col: emptyCol - 1 }, 
+                { row: emptyRow, col: emptyCol + 1 }  
+            ];
+            
+            for (let move of possibleMoves) {
+                if (move.row >= 0 && move.row < gridSize && move.col >= 0 && move.col < gridSize) {
+                    let index = move.row * gridSize + move.col;
+                    tiles[index].classList.add("hint-tile");
+                    setTimeout(() => tiles[index].classList.remove("hint-tile"), 1000);
+                    return;
+                }
+            }
+        }
+    </script>
+</body>
+</html>
