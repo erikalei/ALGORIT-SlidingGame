@@ -20,7 +20,7 @@ A web-based sliding puzzle game built using HTML, CSS, and JavaScript. The playe
 1. **Download or Clone the Repository**
    - If using GitHub:
      ```bash
-     git clone 
+     git clone https://github.com/erikalei/ALGORIT-SlidingGame.git
      ```
    - Or manually download and unzip the `.zip` file.
 
