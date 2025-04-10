@@ -44,6 +44,6 @@ A web-based sliding puzzle game built using HTML, CSS, and JavaScript. The playe
 ## 📽️ Demo Video
 
 Watch the full walkthrough and demo of the game in this video:
-👉 
+👉 https://youtu.be/BBojmmZahWo
 
 ---
