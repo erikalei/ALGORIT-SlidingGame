@@ -18,7 +18,7 @@
 <div id="welcome-screen" class="screen active">
   <h2>🎮 NUMSHIFT - Sliding Puzzle Game</h2>
   <input type="text" id="username" placeholder="Enter your username" />
-  <button class="button" onclick="startGameSetup()">Start Game</button>
+  <button class="button" id="start-button" onclick="startGameSetup()" disabled>Start Game</button>
 </div>
 
 <div id="player-screen" class="screen">
@@ -68,6 +68,13 @@
 
 <div id="settings-screen" class="screen">
   <h2>⚙️ Settings</h2>
+    <div class="settings-section">
+    <label for="change-username">👤 Change Username:</label>
+    <div style="display: flex; gap: 10px; margin-top: 8px;">
+      <input type="text" id="change-username" placeholder="New username" class="username-input" />
+      <button class="button" onclick="changeUsername()" style="width: auto; padding: 0 15px;">Save</button>
+    </div>
+  </div>
   <div class="settings-section">
     <label for="music-volume">🎵 Background Music Volume: <span id="music-volume-label">50%</span></label>
     <input type="range" id="music-volume" min="0" max="100" value="50" />
@@ -117,6 +124,7 @@
 
 <script>
   // Variables
+  let originalBackground = "linear-gradient(135deg, #001f3f, #003366)";
   let difficulty = "easy";
   let currentLevel = 1;
   let maxLevel = 5;
@@ -129,6 +137,23 @@
   let timeElapsed = 0;
   let timerPaused = false;
   let gameId = Math.floor(Math.random() * 100000); // Generate a random game ID
+  let usernameInput = document.getElementById("username");
+  let startButton = document.getElementById("start-button");
+
+  // Add input event listener to validate username
+usernameInput.addEventListener("input", validateUsername);
+
+function validateUsername() {
+    const username = usernameInput.value.trim();
+    startButton.disabled = username.length === 0;
+    
+    // Optional: Add visual feedback
+    if (username.length === 0) {
+        usernameInput.style.boxShadow = "0 0 10px rgba(255, 0, 0, 0.5)";
+    } else {
+        usernameInput.style.boxShadow = "0 0 10px rgba(0, 255, 0, 0.5)";
+    }
+}
 
   // Track last move for undo
   let lastMove = null; // { fromIndex, toIndex }
@@ -164,6 +189,18 @@
     "linear-gradient(135deg, #ffafbd, #ffc3a0)"
   ];
 
+function changeUsername() {
+    const newUsername = document.getElementById("change-username").value.trim();
+    if (newUsername) {
+        usernameStored = newUsername;
+        document.getElementById("player-name").textContent = usernameStored;
+        localStorage.setItem('gameUsername', usernameStored);
+        document.getElementById("change-username").value = ""; // Clear input after save
+        alert("Username changed successfully!");
+    } else {
+        alert("Please enter a valid username");
+    }
+}   
   // Setup audio context and play music on user interaction
   function initAudioContext() {
     if (!audioContext) {
@@ -233,23 +270,37 @@
 
   // Go back in screen history (if any)
   function goBack() {
-    if (screenHistory.length > 0) {
-      let lastScreen = screenHistory.pop();
-      const currentScreen = document.querySelector(".screen.active").id;
-      document.getElementById(currentScreen).classList.remove("active");
-      document.getElementById(lastScreen).classList.add("active");
-      updateTopButtonsVisibility(lastScreen);
-    }
-  }
+    if (screenHistory.length > 0) {
+        let lastScreen = screenHistory.pop();
+        const currentScreen = document.querySelector(".screen.active").id;
+        document.getElementById(currentScreen).classList.remove("active");
+        document.getElementById(lastScreen).classList.add("active");
+        updateTopButtonsVisibility(lastScreen);
+        
+        // Restore original background when going back to levels
+        if (lastScreen === "levels-screen") {
+            document.body.style.background = originalBackground;
+        }
+    }
+}
 
   function startGameSetup() {
-    const username = document.getElementById("username").value.trim();
-    usernameStored = username || "Player 1";
-    document.getElementById("player-name").textContent = usernameStored;
-    document.getElementById("game-id").textContent = gameId;
-    switchScreen("welcome-screen", "player-screen");
-    initAudioContext();
-  }
+    const username = usernameInput.value.trim();
+    if (!username) {
+        alert("Please enter a username to continue!");
+        usernameInput.focus();
+        return;
+    }
+    
+    usernameStored = username;
+    document.getElementById("player-name").textContent = usernameStored;
+    document.getElementById("game-id").textContent = gameId;
+    switchScreen("welcome-screen", "player-screen");
+    initAudioContext();
+    
+    // Save username to localStorage
+    localStorage.setItem('gameUsername', usernameStored);
+}
 
   function selectDifficulty(selected) {
     difficulty = selected;
@@ -517,7 +568,13 @@
   let musicVolume = 50;
 
   function loadSettings() {
+    const savedUsername = localStorage.getItem('gameUsername');
+    if (savedUsername) {
+        usernameStored = savedUsername;
+        document.getElementById("player-name").textContent = usernameStored;
+    }
     const storedVolume = localStorage.getItem('musicVolume');
+
     if (storedVolume !== null) {
       musicVolume = parseInt(storedVolume);
     }
