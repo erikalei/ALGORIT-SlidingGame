@@ -1,12 +1,11 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>NUMSHIFT - Sliding Puzzle Game</title>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
- <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NUMSHIFT - Sliding Puzzle Game</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
@@ -16,675 +15,595 @@
 </div>
 
 <div id="welcome-screen" class="screen active">
-  <h2>🎮 NUMSHIFT - Sliding Puzzle Game</h2>
-  <input type="text" id="username" placeholder="Enter your username" />
-  <button class="button" id="start-button" onclick="startGameSetup()" disabled>Start Game</button>
+  <h2>🎮 NUMSHIFT - Sliding Puzzle Game</h2>
+  <input type="text" id="username" placeholder="Enter your username" autocomplete="off" />
+  <button class="button" id="start-button" onclick="startGameSetup()" disabled>Start Game</button>
 </div>
 
 <div id="player-screen" class="screen">
-  <h2>Welcome, <span id="player-name">Player</span></h2>
-  <p>Your Game ID: <span id="game-id"></span></p>
-  <p>Select your difficulty</p>
-  <button class="button" onclick="selectDifficulty('easy')">Easy</button>
-  <button class="button" onclick="selectDifficulty('medium')">Medium</button>
-  <button class="button" onclick="selectDifficulty('hard')">Hard</button>
+  <h2>Welcome, <span id="player-name">Player</span></h2>
+  <p>Your Game ID: <span id="game-id">#12345</span></p>
+  <p>Select your difficulty</p>
+  <button class="button" onclick="selectDifficulty('easy')">Easy</button>
+  <button class="button" onclick="selectDifficulty('medium')">Medium</button>
+  <button class="button" onclick="selectDifficulty('hard')">Hard</button>
 </div>
 
 <div id="levels-screen" class="screen">
-  <h2>🧩 Select Level</h2>
-  <div id="levels"></div>
-  <div id="leaderboard-section">
-    <div id="leaderboard-title">🏆 Leaderboard (Best Times & Moves)</div>
-    <table id="leaderboard-table">
-      <thead>
-        <tr>
-          <th>Level</th>
-          <th>Time (s)</th>
-          <th>Moves</th>
-        </tr>
-      </thead>
-      <tbody id="leaderboard-body">
-        <!-- leaderboard rows go here -->
-      </tbody>
-    </table>
-  </div>
+  <h2>🧩 Select Level</h2>
+  <div id="levels"></div>
+  <div id="leaderboard-section">
+    <div id="leaderboard-title">🏆 Leaderboard (Best Times & Moves)</div>
+    <table id="leaderboard-table">
+      <thead>
+        <tr>
+          <th>Level</th>
+          <th>Time (s)</th>
+          <th>Moves</th>
+        </tr>
+      </thead>
+      <tbody id="leaderboard-body"></tbody>
+    </table>
+  </div>
 </div>
 
 <div id="game-screen" class="screen">
-  <h2>🧠 Puzzle In Progress</h2>
-  <p>Moves: <span id="move-counter">0</span></p>
-  <p>Time: <span id="timer">0</span> seconds</p>
-  <div class="grid" id="grid"></div>
-  <div style="display: flex; justify-content: center; flex-wrap: wrap; gap:10px; margin-top: 5px;">
-    <button class="button" id="undo-button" onclick="undoMove()" disabled>↩️ Undo Move</button>
-    <button class="button" id="pause-button" onclick="togglePause()">⏸️ Pause Timer</button>
-    <button class="button" id="skip-button" onclick="skipLevel()">⏭️ Skip Level</button>
-    <button class="button" id="show-solution-button" onclick="showSolution()">🔍 Show Solution</button>
-    <button class="button" onclick="resetGame()">🔁 Reset</button>
-  </div>
+  <h2>🧠 Puzzle In Progress</h2>
+  <p>Moves: <span id="move-counter">0</span></p>
+  <p>Time: <span id="timer">0</span> seconds</p>
+  <div class="grid" id="grid"></div>
+  <div style="display: flex; justify-content: center; flex-wrap: wrap; gap:10px; margin-top: 5px;">
+    <button class="button" id="undo-button" onclick="undoMove()" disabled>↩️ Undo Move</button>
+    <button class="button" id="pause-button" onclick="togglePause()">⏸️ Pause Timer</button>
+    <button class="button" id="skip-button" onclick="skipLevel()">⏭️ Skip Level</button>
+    <button class="button" id="show-solution-button" onclick="showSolution()">🔍 Show Solution</button>
+    <button class="button" onclick="resetGame()">🔁 Reset</button>
+  </div>
   <audio id="move-sound" src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAIlYAAESsAAACABAAZGF0YRAAAAAA"></audio>
-  <audio id="win-sound" src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAIlYAAESsAAACABAAZGF0YRAAAAAA"></audio>
+  <audio id="win-sound" src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAIlYAAESsAAACABAAZGF0YRAAAAAA"></audio>
 </div>
 
 <div id="settings-screen" class="screen">
-  <h2>⚙️ Settings</h2>
-    <div class="settings-section">
+  <h2>⚙️ Settings</h2>
+  <div class="settings-section">
     <label for="change-username">👤 Change Username:</label>
     <div style="display: flex; gap: 10px; margin-top: 8px;">
-      <input type="text" id="change-username" placeholder="New username" class="username-input" />
+      <input type="text" id="change-username" placeholder="New username" class="username-input" autocomplete="off" />
       <button class="button" onclick="changeUsername()" style="width: auto; padding: 0 15px;">Save</button>
-    </div>
+     </div>
   </div>
-  <div class="settings-section">
-    <label for="music-volume">🎵 Background Music Volume: <span id="music-volume-label">50%</span></label>
-    <input type="range" id="music-volume" min="0" max="100" value="50" />
-  </div>
-  <div class="settings-section">
-    <label for="sfx-volume">🔊 Sound Effects Volume: <span id="sfx-volume-label">50%</span></label>
-    <input type="range" id="sfx-volume" min="0" max="100" value="50" />
-  </div>
-  <div class="settings-section" style="display: flex; align-items: center; gap: 10px;">
-    <label for="sfx-toggle" style="margin:0;">🔈 Sound Effects: </label>
-    <input type="checkbox" id="sfx-toggle" checked />
-  </div>
-  <div style="width: 100%; text-align: left; margin-bottom: 15px;">
-    <label>❓ How to Play:</label>
-    <p style="font-size: 14px; line-height: 1.4;">
-      Rearrange the numbered tiles by sliding them into the empty space.<br/>
-      Complete the puzzle by arranging the tiles in ascending order.<br/>
-      Use the Undo and Pause buttons as needed.<br/>
-      Your moves and time are recorded on the leaderboard.<br/>
-    </p>
-  </div>
-  <div style="width: 100%; text-align: left;">
-    <label>📌 Additional Features:</label>
-    <ul style="font-size: 14px; line-height: 1.4;">
-      <li>Show Solution to briefly preview the solved puzzle.</li>
-      <li>Pause and resume the timer at any time.</li>
-      <li>Undo one move to correct mistakes.</li>
-      <li>Skip current level to advance.</li>
-    </ul>
-  </div>
+  <div class="settings-section">
+    <label for="music-volume">🎵 Background Music Volume: <span id="music-volume-label">50%</span></label>
+    <input type="range" id="music-volume" min="0" max="100" value="50" />
+  </div>
+  <div class="settings-section">
+    <label for="sfx-volume">🔊 Sound Effects Volume: <span id="sfx-volume-label">50%</span></label>
+    <input type="range" id="sfx-volume" min="0" max="100" value="50" />
+  </div>
+  <div class="settings-section" style="display: flex; align-items: center; gap: 10px;">
+    <label for="sfx-toggle" style="margin:0;">🔈 Sound Effects: </label>
+    <input type="checkbox" id="sfx-toggle" checked />
+  </div>
+  <div style="width: 100%; text-align: left; margin-bottom: 15px;">
+    <label>❓ How to Play:</label>
+    <p style="font-size: 14px; line-height: 1.4;">
+      Rearrange the numbered tiles by sliding them into the empty space.<br/>
+      Complete the puzzle by arranging the tiles in ascending order.<br/>
+      Use the Undo and Pause buttons as needed.<br/>
+      Your moves and time are recorded on the leaderboard.<br/>
+    </p>
+  </div>
+  <div style="width: 100%; text-align: left;">
+    <label>📌 Additional Features:</label>
+    <ul style="font-size: 14px; line-height: 1.4;">
+      <li>Show Solution to briefly preview the solved puzzle.</li>
+      <li>Pause and resume the timer at any time.</li>
+      <li>Undo one move to correct mistakes.</li>
+      <li>Skip current level to advance.</li>
+    </ul>
+  </div>
 </div>
 
 <!-- Congratulatory Modal -->
 <div id="congratulations-modal" class="modal">
-  <div class="modal-content">
-    <span class="close" onclick="closeModal()">&times;</span>
-    <h2>🎉 Congrats! You finished Level <span id="modal-level"></span>!</h2>
-    <p>You completed it in <span id="modal-time"></span> seconds with <span id="modal-moves"></span> moves!</p>
-    <div class="modal-buttons">
-      <button class="button" onclick="nextLevel()">Next Level</button>
-      <button class="button" onclick="goBackToDifficulty()">Back to Difficulty</button>
-    </div>
-  </div>
+  <div class="modal-content">
+    <span class="close" onclick="closeModal()">&times;</span>
+    <h2>🎉 Congrats! You finished Level <span id="modal-level"></span>!</h2>
+    <p>You completed it in <span id="modal-time"></span> seconds with <span id="modal-moves"></span> moves!</p>
+    <div class="modal-buttons">
+      <button class="button" onclick="nextLevel()">Next Level</button>
+      <button class="button" onclick="goBackToDifficulty()">Back to Difficulty</button>
+    </div>
+  </div>
 </div>
 
-<audio id="background-music" loop preload="auto" src="https://cdn.pixabay.com/download/audio/2021/08/04/audio_629c7defad.mp3?filename=ambient-cinematic-music-background-11490.mp3"></audio>
+<audio id="background-music" loop preload="auto">
+    <source src="assets/audio/bgm3.mp3" type="audio/mpeg">
+    Your browser does not support the audio element.
+</audio>
 
 <script>
-  // Variables
-  let originalBackground = "linear-gradient(135deg, #001f3f, #003366)";
-  let difficulty = "easy";
-  let currentLevel = 1;
-  let maxLevel = 5;
-  let gridSize;
-  let tiles = [];
-  let emptyTile;
-  let completedLevels = 1;
-  let moveCounter = 0;
-  let timer;
-  let timeElapsed = 0;
-  let timerPaused = false;
-  let gameId = Math.floor(Math.random() * 100000); // Generate a random game ID
-  let usernameInput = document.getElementById("username");
-  let startButton = document.getElementById("start-button");
+  let difficulty = "easy";
+  let maxLevel = 5;
+  let completedLevels = 1;
+  let currentLevel = 1;
+  let gridSize = 3;
+  let tiles = [];
+  let emptyTile = {};
+  let moveCounter = 0;
+  let timeElapsed = 0;
+  let timer;
+  let timerPaused = false;
+  let lastMove = null;
+  let usernameStored = "";
+  let screenHistory = [];
 
-  // Add input event listener to validate username
-usernameInput.addEventListener("input", validateUsername);
+  let sfxEnabled = true;
+  let sfxVolume = 50;
 
-function validateUsername() {
+  let backgrounds = [
+  "linear-gradient(135deg, #001933, #002a4d)",      // darker navy blue
+  "linear-gradient(135deg, #3b006b, #6f21c2)",      // darker indigo-violet
+  "linear-gradient(135deg, #cc654c, #d68a5e)",      // darker peach-orange
+  "linear-gradient(135deg, #009acc, #005bb5)",      // darker cyan-blue
+  "linear-gradient(135deg, #e699a8, #e6b3a0)"        // darker pink-beige
+];
+  const backgroundMusic = document.getElementById("background-music");
+  let audioContext;
+
+  // Enable start button on input username
+  document.getElementById("username").addEventListener("input", function () {
+    const username = this.value.trim();
+    document.getElementById("start-button").disabled = username === "";
+  });
+
+  // Start game setup from welcome screen - store username and go to player screen
+  function startGameSetup() {
+    const usernameInput = document.getElementById("username");
     const username = usernameInput.value.trim();
-    startButton.disabled = username.length === 0;
-    
-    // Optional: Add visual feedback
-    if (username.length === 0) {
-        usernameInput.style.boxShadow = "0 0 10px rgba(255, 0, 0, 0.5)";
-    } else {
-        usernameInput.style.boxShadow = "0 0 10px rgba(0, 255, 0, 0.5)";
+    if (username === "") {
+      alert("Please enter a username to start the game.");
+      return;
     }
-}
-
-  // Track last move for undo
-  let lastMove = null; // { fromIndex, toIndex }
-
-  // Store solution state for showSolution
-  let solutionTiles = [];
-
-  // Audio elements for feedback
-  const moveSoundElem = document.getElementById("move-sound");
-  const winSoundElem = document.getElementById("win-sound");
-  const backgroundMusic = document.getElementById("background-music");
-
-  let audioContext;
-
-  // Sound effect enabled toggle
-  let sfxEnabled = true;
-
-  // Sound effects volume (default 50%)
-  let sfxVolume = 50;
-
-  // Store history for back navigation
-  const screenHistory = [];
-
-  // User name storage
-  let usernameStored = "";
-
-  // Backgrounds array for each level
-  let backgrounds = [
-    "linear-gradient(135deg, #001f3f, #003366)",
-    "linear-gradient(135deg, #4b0082, #8a2be2)",
-    "linear-gradient(135deg, #ff7e5f, #feb47b)",
-    "linear-gradient(135deg, #00c6ff, #0072ff)",
-    "linear-gradient(135deg, #ffafbd, #ffc3a0)"
-  ];
-
-function changeUsername() {
-    const newUsername = document.getElementById("change-username").value.trim();
-    if (newUsername) {
-        usernameStored = newUsername;
-        document.getElementById("player-name").textContent = usernameStored;
-        localStorage.setItem('gameUsername', usernameStored);
-        document.getElementById("change-username").value = ""; // Clear input after save
-        alert("Username changed successfully!");
-    } else {
-        alert("Please enter a valid username");
-    }
-}   
-  // Setup audio context and play music on user interaction
-  function initAudioContext() {
-    if (!audioContext) {
-      audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      // Connect background music to audio context destination
-      const source = audioContext.createMediaElementSource(backgroundMusic);
-      source.connect(audioContext.destination);
-      try {
-        audioContext.resume();
-      } catch(e) {}
-      backgroundMusic.volume = musicVolume / 100;
-      if (!backgroundMusic.playing) {
-        backgroundMusic.play().catch(() => {});
-      }
-    }
-  }
-
-  // Play move sound if SFX enabled, with volume control
-  function playMoveSound() {
-    if (!sfxEnabled) return;
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const gainNode = ctx.createGain();
-    gainNode.gain.value = sfxVolume / 100;
-    const osc = ctx.createOscillator();
-    osc.type = "sine";
-    osc.frequency.value = 400;
-    osc.connect(gainNode);
-    gainNode.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.1);
-  }
-
-  // Play win sound if SFX enabled, with volume control
-  function playWinSound() {
-    if (!sfxEnabled) return;
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const gainNode = ctx.createGain();
-    gainNode.gain.value = sfxVolume / 100;
-    const osc = ctx.createOscillator();
-    osc.type = "triangle";
-    osc.frequency.setValueAtTime(800, ctx.currentTime);
-    osc.connect(gainNode);
-    gainNode.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.3);
-  }
-
-  // Helper to switch screens with history tracking
-  function switchScreen(from, to, trackHistory=true) {
-    if (trackHistory && from !== to) {
-      screenHistory.push(from);
-    }
-    document.getElementById(from).classList.remove("active");
-    document.getElementById(to).classList.add("active");
-    updateTopButtonsVisibility(to);
-  }
-
-  // Show or hide the top-right buttons on specific screens
-  function updateTopButtonsVisibility(screenId) {
-    const buttons = document.getElementById("global-top-right-buttons");
-    if(screenId === "welcome-screen") {
-      buttons.style.display = "none";
-    } else {
-      buttons.style.display = "flex";
-    }
-  }
-
-  // Go back in screen history (if any)
-  function goBack() {
-    if (screenHistory.length > 0) {
-        let lastScreen = screenHistory.pop();
-        const currentScreen = document.querySelector(".screen.active").id;
-        document.getElementById(currentScreen).classList.remove("active");
-        document.getElementById(lastScreen).classList.add("active");
-        updateTopButtonsVisibility(lastScreen);
-        
-        // Restore original background when going back to levels
-        if (lastScreen === "levels-screen") {
-            document.body.style.background = originalBackground;
-        }
-    }
-}
-
-  function startGameSetup() {
-    const username = usernameInput.value.trim();
-    if (!username) {
-        alert("Please enter a username to continue!");
-        usernameInput.focus();
-        return;
-    }
-    
     usernameStored = username;
-    document.getElementById("player-name").textContent = usernameStored;
-    document.getElementById("game-id").textContent = gameId;
-    switchScreen("welcome-screen", "player-screen");
-    initAudioContext();
-    
-    // Save username to localStorage
     localStorage.setItem('gameUsername', usernameStored);
-}
+    document.getElementById("player-name").textContent = usernameStored;
+    switchScreen("welcome-screen", "player-screen");
+  }
 
-  function selectDifficulty(selected) {
-    difficulty = selected;
-    switchScreen("player-screen", "levels-screen");
-    showLevels();
-  }
+  function switchScreen(from, to) {
+    document.getElementById(from).classList.remove("active");
+    document.getElementById(to).classList.add("active");
+    updateTopButtonsVisibility (to);
+  }
 
-  function showLevels() {
-    let levelsDiv = document.getElementById("levels");
-    levelsDiv.innerHTML = "";
-    for (let i = 1; i <= maxLevel; i++) {
-      let btn = document.createElement("button");
-      btn.innerText = `Level ${i}`;
-      btn.className = "button";
-      btn.disabled = i > completedLevels;
-      btn.onclick = () => startGame(i);
-      levelsDiv.appendChild(btn);
-    }
-    updateLeaderboard();
-  }
+  function updateTopButtonsVisibility(screenId) {
+    const backButton = document.getElementById("back-button");
+    const settingsButton = document.getElementById("settings-button");
+    if (!backButton || !settingsButton) return;
 
-  function startGame(level) {
-    currentLevel = level;
-    gridSize = level + 2;
-    switchScreen("levels-screen", "game-screen");
-    changeBackground();
-    initGrid();
-    startTimer();
-  }
+    if (screenId === "settings-screen" || screenId === "game-screen") {
+      backButton.style.display = "inline-block";
+      settingsButton.style.display = "none";
+    } else {
+      backButton.style.display = "none";
+      settingsButton.style.display = "inline-block";
+    }
+  }
 
-  function initGrid() {
-    let grid = document.getElementById("grid");
-    grid.innerHTML = "";
-    grid.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
-    tiles = [];
-    let numbers = Array.from({ length: gridSize * gridSize }, (_, i) => i);
-    shuffleArray(numbers);
-    solutionTiles = [];
-    numbers.forEach((num) => solutionTiles.push(num));
-    numbers.forEach((num, index) => {
-      let tile = document.createElement("div");
-      tile.classList.add("tile");
-      if (num === 0) {
-        tile.classList.add("empty");
-        emptyTile = { index, element: tile };
-        tile.textContent = "";
-        tile.onclick = null;
-      } else {
-        tile.textContent = num;
-        tile.onclick = () => moveTile(index);
-      }
-      tiles.push(tile);
-      grid.appendChild(tile);
-    });
-    moveCounter = 0;
-    timeElapsed = 0;
-    timerPaused = false;
-    document.getElementById("move-counter").textContent = moveCounter;
-    document.getElementById("timer").textContent = timeElapsed;
-    lastMove = null;
-    document.getElementById("undo-button").disabled = true;
-    document.getElementById("pause-button").textContent = "⏸️ Pause Timer";
-  }
+  function goBack() {
+    if (screenHistory.length === 0) {
+      switchScreen(document.querySelector(".screen.active").id, "welcome-screen");
+      return;
+    }
+    const lastScreen = screenHistory.pop();
+    switchScreen(document.querySelector(".screen.active").id, lastScreen);
+  }
 
-  function moveTile(index) {
-    if(timerPaused) return;
-    let row = Math.floor(index / gridSize);
-    let col = index % gridSize;
-    let emptyRow = Math.floor(emptyTile.index / gridSize);
-    let emptyCol = emptyTile.index % gridSize;
-    if ((Math.abs(row - emptyRow) === 1 && col === emptyCol) ||
-        (Math.abs(col - emptyCol) === 1 && row === emptyRow)) {
-      swapTiles(index, emptyTile.index);
-      moveCounter++;
-      document.getElementById("move-counter").textContent = moveCounter;
-      lastMove = { fromIndex: index, toIndex: emptyTile.index };
-      document.getElementById("undo-button").disabled = false;
-      playMoveSound();
-    }
-  }
+  function selectDifficulty(selected) {
+    difficulty = selected;
+    screenHistory.push("player-screen");
+    switchScreen("player-screen", "levels-screen");
+    showLevels();
+  }
 
-  function swapTiles(tileIndex, emptyIndex) {
-    let tempText = tiles[tileIndex].textContent;
-    tiles[tileIndex].textContent = "";
-    tiles[tileIndex].classList.add("empty");
-    tiles[tileIndex].onclick = null;
-    tiles[emptyIndex].textContent = tempText;
-    tiles[emptyIndex].classList.remove("empty");
-    tiles[emptyIndex].onclick = () => moveTile(emptyIndex);
-    emptyTile.index = tileIndex;
-    emptyTile.element = tiles[tileIndex];
-    checkWin();
-  }
+  function showLevels() {
+    let levelsDiv = document.getElementById("levels");
+    levelsDiv.innerHTML = "";
+    for (let i = 1; i <= maxLevel; i++) {
+      let btn = document.createElement("button");
+      btn.innerText = `Level ${i}`;
+      btn.className = "button";
+      btn.disabled = i > completedLevels;
+      btn.onclick = () => startGame(i);
+      levelsDiv.appendChild(btn);
+    }
+    updateLeaderboard();
+  }
 
-  function undoMove() {
-    if (!lastMove) return;
-    if(timerPaused) return;
-    swapTiles(lastMove.toIndex, lastMove.fromIndex);
-    moveCounter = Math.max(0, moveCounter - 1);
-    document.getElementById("move-counter").textContent = moveCounter;
-    lastMove = null;
-    document.getElementById("undo-button").disabled = true;
-    playMoveSound();
-  }
+  function startGame(level) {
+    currentLevel = level;
+    gridSize = level + 2;
+    screenHistory.push("levels-screen");
+    switchScreen(document.querySelector(".screen.active").id, "game-screen");
+    changeBackground();
+    initGrid();
+    startTimer();
+  }
 
-  function checkWin() {
-    for (let i = 0; i < tiles.length; i++) {
-      if (i === tiles.length - 1) {
-        if (!tiles[i].classList.contains("empty")) return;
-      } else {
-        if (tiles[i].textContent != i + 1) return;
-      }
-    }
-    clearInterval(timer);
-    playWinSound();
-    showCongratulationsModal();
-    completedLevels = Math.max(completedLevels, currentLevel + 1);
-    showLevels();
-  }
+  function initGrid() {
+    let grid = document.getElementById("grid");
+    grid.innerHTML = "";
+    grid.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
+    tiles = [];
+    let numbers = Array.from({ length: gridSize * gridSize }, (_, i) => i);
+    shuffleArray(numbers);
+    numbers.forEach((num, index) => {
+      let tile = document.createElement("div");
+      tile.classList.add("tile");
+      if (num === 0) {
+        tile.classList.add("empty");
+        emptyTile = { index, element: tile };
+        tile.textContent = "";
+        tile.onclick = null;
+      } else {
+        tile.textContent = num;
+        tile.onclick = () => moveTile(index);
+      }
+      tiles.push(tile);
+      grid.appendChild(tile);
+    });
+    moveCounter = 0;
+    timeElapsed = 0;
+    timerPaused = false;
+    document.getElementById("move-counter").textContent = moveCounter;
+    document.getElementById("timer").textContent = timeElapsed;
+    lastMove = null;
+    document.getElementById("undo-button").disabled = true;
+    document.getElementById("pause-button").textContent = "⏸️ Pause Timer";
+  }
 
-  function shuffleArray(arr) {
-    for (let i = arr.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-  }
+  function moveTile(index) {
+    if (timerPaused) return;
+    let row = Math.floor(index / gridSize);
+    let col = index % gridSize;
+    let emptyRow = Math.floor(emptyTile.index / gridSize);
+    let emptyCol = emptyTile.index % gridSize;
+    if ((Math.abs(row - emptyRow) === 1 && col === emptyCol) ||
+        (Math.abs(col - emptyCol) === 1 && row === emptyRow)) {
+      swapTiles(index, emptyTile.index);
+      moveCounter++;
+      document.getElementById("move-counter").textContent = moveCounter;
+      lastMove = { fromIndex: index, toIndex: emptyTile.index };
+      document.getElementById("undo-button").disabled = false;
+      playMoveSound();
+    }
+  }
 
-  function startTimer() {
-    clearInterval(timer);
-    timerPaused = false;
-    document.getElementById("pause-button").textContent = "⏸️ Pause Timer";
-    timeElapsed = 0;
-    document.getElementById("timer").textContent = timeElapsed;
-    timer = setInterval(() => {
-      timeElapsed++;
-      document.getElementById("timer").textContent = timeElapsed;
-    }, 1000);
-  }
+  function swapTiles(tileIndex, emptyIndex) {
+    let tempText = tiles[tileIndex].textContent;
+    tiles[tileIndex].textContent = "";
+    tiles[tileIndex].classList.add("empty");
+    tiles[tileIndex].onclick = null;
+    tiles[emptyIndex].textContent = tempText;
+    tiles[emptyIndex].classList.remove("empty");
+    tiles[emptyIndex].onclick = () => moveTile(emptyIndex);
+    emptyTile.index = tileIndex;
+    emptyTile.element = tiles[tileIndex];
+    checkWin();
+  }
 
-  // Toggle pause/resume timer
-  function togglePause() {
-    if (!timer) return;
-    if(timerPaused){
-      timerPaused = false;
-      document.getElementById("pause-button").textContent = "⏸️ Pause Timer";
-      timer = setInterval(() => {
-        timeElapsed++;
-        document.getElementById("timer").textContent = timeElapsed;
-      }, 1000);
-    } else {
-      timerPaused = true;
-      document.getElementById("pause-button").textContent = "▶️ Resume Timer";
-      clearInterval(timer);
-    }
-  }
+  function undoMove() {
+    if (!lastMove || timerPaused) return;
+    swapTiles(lastMove.toIndex, lastMove.fromIndex);
+    moveCounter = Math.max(0, moveCounter - 1);
+    document.getElementById("move-counter").textContent = moveCounter;
+    lastMove = null;
+    document.getElementById("undo-button").disabled = true; 
+    playMoveSound();
+  }
 
-  // Skip current level and go to next
-  function skipLevel() {
-    closeModal();
-    if(currentLevel < maxLevel){
-      currentLevel++;
-      startGame(currentLevel);
-    } else {
-      alert("You have reached the last level.");
-    }
-  }
+  function checkWin() {
+    for (let i = 0; i < tiles.length; i++) {
+      if (i === tiles.length - 1) {
+        if (!tiles[i].classList.contains("empty")) return;
+      } else {
+        if (tiles[i].textContent != i + 1) return;
+      }
+    }
+    clearInterval(timer);
+    playWinSound();
+    showCongratulationsModal();
+    completedLevels = Math.max(completedLevels, currentLevel + 1);
+    updateLeaderboardOnWin();
+    showLevels();
+  }
 
-  function resetGame() {
-    clearInterval(timer);
-    initGrid();
-    startTimer();
-    lastMove = null;
-    document.getElementById("undo-button").disabled = true;
-  }
+  function shuffleArray(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+  }
 
-  // Show the solved puzzle state briefly flashing the solved tiles
-  function showSolution() {
-    disableGameControls(true);
-    const backupTexts = tiles.map(t => t.textContent);
-    const backupClasses = tiles.map(t => t.className);
-    for(let i=0; i<tiles.length; i++){
-      if(i === tiles.length-1){
-        tiles[i].textContent = "";
-        tiles[i].className = "tile empty";
-        tiles[i].onclick = null;
-      } else {
-        tiles[i].textContent = (i+1).toString();
-        tiles[i].className = "tile";
-        tiles[i].onclick = () => moveTile(i);
-      }
-    }
-    setTimeout(() => {
-      for(let i=0; i<tiles.length; i++){
-        tiles[i].textContent = backupTexts[i];
-        tiles[i].className = backupClasses[i];
-        if(!tiles[i].classList.contains("empty")){
-          tiles[i].onclick = () => moveTile(i);
-        } else {
-          tiles[i].onclick = null;
-          emptyTile = { index: i, element: tiles[i] };
-        }
-      }
-      disableGameControls(false);
-    }, 3000);
-  }
+  function startTimer() {
+    clearInterval(timer);
+    timerPaused = false;
+    timeElapsed = 0;
+    document.getElementById("pause-button").textContent = "⏸️ Pause Timer";
+    timer = setInterval(() => {
+      timeElapsed++;
+      document.getElementById("timer").textContent = timeElapsed;
+    }, 1000);
+  }
 
-  function disableGameControls(disable) {
-    document.getElementById("undo-button").disabled = disable || lastMove === null;
-    document.getElementById("pause-button").disabled = disable;
-    document.querySelector("#game-screen button[onclick='showSolution()']").disabled = disable;
-    document.querySelector("#game-screen button[onclick='resetGame()']").disabled = disable;
-    document.getElementById("skip-button").disabled = disable;
-  }
+  function togglePause() {
+    if (!timer) return;
+    if (timerPaused) {
+      timerPaused = false;
+      document.getElementById("pause-button").textContent = "⏸️ Pause Timer";
+      timer = setInterval(() => {
+        timeElapsed++;
+        document.getElementById("timer").textContent = timeElapsed;
+      }, 1000);
+    } else {
+      timerPaused = true;
+      document.getElementById("pause-button").textContent = "▶️ Resume Timer";
+      clearInterval(timer);
+    }
+  }
 
-  // Leaderboard Implementation
-  function updateLeaderboard(){
-    const tbody = document.getElementById("leaderboard-body");
-    tbody.innerHTML = "";
-    let data = getLeaderboardData();
-    for(let lvl=1; lvl<=maxLevel; lvl++){
-      let tr = document.createElement("tr");
-      let tdLevel = document.createElement("td");
-      tdLevel.textContent = "Level " + lvl;
-      let tdTime = document.createElement("td");
-      let tdMoves = document.createElement("td");
-      if(data[lvl]){
-        tdTime.textContent = data[lvl].time;
-        tdMoves.textContent = data[lvl].moves;
-      } else {
-        tdTime.textContent = "-";
-        tdMoves.textContent = "-";
-      }
-      tr.appendChild(tdLevel);
-      tr.appendChild(tdTime);
-      tr.appendChild(tdMoves);
-      tbody.appendChild(tr);
-    }
-  }
+  function skipLevel() {
+    closeModal();
+    if (currentLevel < maxLevel) {
+      currentLevel++;
+      startGame(currentLevel);
+    } else {
+      alert("You have reached the last level.");
+    }
+  }
 
-  function getLeaderboardData(){
-    let key = `leaderboard_${difficulty}`;
-    let stored = localStorage.getItem(key);
-    if(stored){
-      try{
-        return JSON.parse(stored);
-      }catch(e){
-        return {};
-      }
-    }
-    return {};
-  }
+  function resetGame() {
+    clearInterval(timer);
+    initGrid();
+    startTimer();
+    lastMove = null;
+    document.getElementById("undo-button").disabled = true;
+  }
 
-  function updateLeaderboardOnWin(){
-    let data = getLeaderboardData();
-    let level = currentLevel;
-    if(!data[level] || timeElapsed < data[level].time || (timeElapsed === data[level].time && moveCounter < data[level].moves)){
-      data[level] = { time: timeElapsed, moves: moveCounter };
-      let key = `leaderboard_${difficulty}`;
-      localStorage.setItem(key, JSON.stringify(data));
-    }
-  }
+  function showSolution() {
+    disableGameControls(true);
+    const backupTexts = tiles.map(t => t.textContent);
+    const backupClasses = tiles.map(t => t.className);
+    for (let i = 0; i < tiles.length; i++) {
+      if (i === tiles.length - 1) {
+        tiles[i].textContent = "";
+        tiles[i].className = "tile empty";
+        tiles[i].onclick = null;
+      } else {
+        tiles[i].textContent = (i + 1).toString();
+        tiles[i].className = "tile";
+        tiles[i].onclick = () => moveTile(i);
+      }
+    }
+    setTimeout(() => {
+      for (let i = 0; i < tiles.length; i++) {
+        tiles[i].textContent = backupTexts[i];
+        tiles[i].className = backupClasses[i];
+        if (!tiles[i].classList.contains("empty")) {
+          tiles[i].onclick = () => moveTile(i);
+        } else {
+          tiles[i].onclick = null;
+          emptyTile = { index: i, element: tiles[i] };
+        }
+      }
+      disableGameControls(false);
+    }, 3000);
+  }
 
-  // Settings and Back button support
+  function disableGameControls(disable) {
+    document.getElementById("undo-button").disabled = disable || lastMove === null;
+    document.getElementById("pause-button").disabled = disable;
+    document.querySelector("#game-screen button[onclick='showSolution()']").disabled = disable;
+    document.querySelector("#game-screen button[onclick='resetGame()']").disabled = disable;
+    document.getElementById("skip-button").disabled = disable;
+  }
 
-  let musicVolume = 50;
+  function updateLeaderboard() {
+    const tbody = document.getElementById("leaderboard-body");
+    tbody.innerHTML = "";
+    const data = getLeaderboardData();
+    for (let lvl = 1; lvl <= maxLevel; lvl++) {
+      let tr = document.createElement("tr");
+      let tdLevel = document.createElement("td");
+      tdLevel.textContent = "Level " + lvl;
+      let tdTime = document.createElement("td");
+      let tdMoves = document.createElement("td");
+      if (data[lvl]) {
+        tdTime.textContent = data[lvl].time;
+        tdMoves.textContent = data[lvl].moves;
+      } else {
+        tdTime.textContent = "-";
+        tdMoves.textContent = "-";
+      }
+      tr.appendChild(tdLevel);
+      tr.appendChild(tdTime);
+      tr.appendChild(tdMoves);
+      tbody.appendChild(tr);
+    }
+  }
 
-  function loadSettings() {
+  function getLeaderboardData() {
+    let key = `leaderboard_${difficulty}`;
+    let stored = localStorage.getItem(key);
+    if (stored) {
+      try {
+        return JSON.parse(stored);
+      } catch (e) {
+        return {};
+      }
+    }
+    return {};
+  }
+
+  function updateLeaderboardOnWin() {
+    let data = getLeaderboardData();
+    let level = currentLevel;
+    if (!data[level] || timeElapsed < data[level].time || (timeElapsed === data[level].time && moveCounter < data[level].moves)) {
+      data[level] = { time: timeElapsed, moves: moveCounter };
+      let key = `leaderboard_${difficulty}`;
+      localStorage.setItem(key, JSON.stringify(data));
+    }
+  }
+
+  function loadSettings() {
     const savedUsername = localStorage.getItem('gameUsername');
     if (savedUsername) {
-        usernameStored = savedUsername;
-        document.getElementById("player-name").textContent = usernameStored;
+      usernameStored = savedUsername;
+      document.getElementById("player-name").textContent = usernameStored;
+      document.getElementById("username").value = usernameStored;
+      document.getElementById("start-button").disabled = false;
     }
-    const storedVolume = localStorage.getItem('musicVolume');
+    const storedVolume = localStorage.getItem('musicVolume');
+    if (storedVolume !== null) {
+      musicVolume = parseInt(storedVolume);
+    }
+    const storedSFX = localStorage.getItem('sfxEnabled');
+    if (storedSFX !== null) {
+      sfxEnabled = storedSFX === 'true';
+    }
+    const storedSFXVolume = localStorage.getItem('sfxVolume');
+    if (storedSFXVolume !== null) {
+      sfxVolume = parseInt(storedSFXVolume);
+    }
+    document.getElementById('music-volume').value = musicVolume;
+    document.getElementById('music-volume-label').textContent = musicVolume + '%';
+    document.getElementById('sfx-toggle').checked = sfxEnabled;
+    document.getElementById('sfx-volume').value = sfxVolume;
+    document.getElementById('sfx-volume-label').textContent = sfxVolume + '%';
+    backgroundMusic.volume = musicVolume / 100;
+  }
 
-    if (storedVolume !== null) {
-      musicVolume = parseInt(storedVolume);
-    }
-    const storedSFX = localStorage.getItem('sfxEnabled');
-    if (storedSFX !== null) {
-      sfxEnabled = storedSFX === 'true';
-    }
-    const storedSFXVolume = localStorage.getItem('sfxVolume');
-    if(storedSFXVolume !== null){
-      sfxVolume = parseInt(storedSFXVolume);
-    }
-    document.getElementById('music-volume').value = musicVolume;
-    document.getElementById('music-volume-label').textContent = musicVolume + '%';
-    document.getElementById('sfx-toggle').checked = sfxEnabled;
-    document.getElementById('sfx-volume').value = sfxVolume;
-    document.getElementById('sfx-volume-label').textContent = sfxVolume + '%';
-    backgroundMusic.volume = musicVolume / 100;
-  }
+  function saveSettings() {
+    localStorage.setItem('musicVolume', musicVolume);
+    localStorage.setItem('sfxEnabled', sfxEnabled);
+    localStorage.setItem('sfxVolume', sfxVolume);
+  }
 
-  function saveSettings() {
-    localStorage.setItem('musicVolume', musicVolume);
-    localStorage.setItem('sfxEnabled', sfxEnabled);
-    localStorage.setItem('sfxVolume', sfxVolume);
-  }
+  function openSettings() {
+    const currentScreen = document.querySelector(".screen.active").id;
+    screenHistory.push(currentScreen);
+    switchScreen(currentScreen, "settings-screen");
+  }
 
-  function openSettings() {
-    const currentScreen = document.querySelector(".screen.active").id;
-    screenHistory.push(currentScreen);
-    switchScreen(currentScreen, "settings-screen");
-  }
+  document.getElementById('music-volume').addEventListener('input', (e) => {
+    musicVolume = parseInt(e.target.value);
+    document.getElementById('music-volume-label').textContent = musicVolume + '%';
+    backgroundMusic.volume = musicVolume / 100;
+    saveSettings();
+  });
 
-  function closeSettings() {
-    goBack();
-  }
+  document.getElementById('sfx-toggle').addEventListener('change', (e) => {
+    sfxEnabled = e.target.checked;
+    saveSettings();
+  });
 
-  // Music volume slider change
-  document.getElementById('music-volume').addEventListener('input', (e) => {
-    musicVolume = parseInt(e.target.value);
-    document.getElementById('music-volume-label').textContent = musicVolume + '%';
-    backgroundMusic.volume = musicVolume / 100;
-    saveSettings();
-  });
+  document.getElementById('sfx-volume').addEventListener('input', (e) => {
+    sfxVolume = parseInt(e.target.value);
+    document.getElementById('sfx-volume-label').textContent = sfxVolume + '%';
+    saveSettings();
+  });
 
-  // Sound Effects toggle change
-  document.getElementById('sfx-toggle').addEventListener('change', (e) => {
-    sfxEnabled = e.target.checked;
-    saveSettings();
-  });
+  function changeUsername() {
+    const newName = document.getElementById("change-username").value.trim();
+    if (newName === "") {
+      alert("Username cannot be empty.");
+      return;
+    }
+    usernameStored = newName;
+    localStorage.setItem('gameUsername', usernameStored);
+    document.getElementById("player-name").textContent = usernameStored;
+    alert("Username changed successfully.");
+  }
 
-  // Sound Effects volume slider change
-  document.getElementById('sfx-volume').addEventListener('input', (e) => {
-    sfxVolume = parseInt(e.target.value);
-    document.getElementById('sfx-volume-label').textContent = sfxVolume + '%';
-    saveSettings();
-  });
+  function showCongratulationsModal() {
+    document.getElementById("modal-level").textContent = currentLevel;
+    document.getElementById("modal-time").textContent = timeElapsed;
+    document.getElementById("modal-moves").textContent = moveCounter;
+    document.getElementById("congratulations-modal").style.display = "flex";
+  }
 
-  // Modal functions for congrats popup
-  function showCongratulationsModal() {
-    document.getElementById("modal-level").textContent = currentLevel;
-    document.getElementById("modal-time").textContent = timeElapsed;
-    document.getElementById("modal-moves").textContent = moveCounter;
-    const modal = document.getElementById("congratulations-modal");
-    modal.style.display = "block";
-  }
-  function closeModal() {
-    const modal = document.getElementById("congratulations-modal");
-    modal.style.display = "none";
-  }
-  function nextLevel() {
-    closeModal();
-    if(currentLevel < maxLevel){
-      currentLevel++;
-      startGame(currentLevel);
-    } else {
-      alert("You have reached the last level.");
-    }
-  }
-  function goBackToDifficulty() {
-    closeModal();
-    switchScreen(document.querySelector(".screen.active").id, "player-screen");
-  }
+  function closeModal() {
+    document.getElementById("congratulations-modal").style.display = "none";
+  }
 
-  // Change background based on current level
-  function changeBackground() {
-    document.body.style.background = backgrounds[currentLevel - 1] || backgrounds[0];
-  }
+  function nextLevel() {
+    closeModal();
+    if (currentLevel < maxLevel) {
+      currentLevel++;
+      startGame(currentLevel);
+    } else {
+      alert("You have reached the last level.");
+    }
+  }
 
-  // Initialize leaderboard and loads settings on window load
-  window.onload = () => {
-    showLevels();
-    loadSettings();
-    updateTopButtonsVisibility(document.querySelector(".screen.active").id);
-    // We do not autoplay music here to comply with browser policy - only start after user interaction
-  };
+  function goBackToDifficulty() {
+    closeModal();
+    switchScreen(document.querySelector(".screen.active").id, "player-screen");
+  }
 
-  // Ensure background music starts after first user interaction anywhere on page
-  function unlockAudioOnUserGesture() {
-    if (backgroundMusic.paused) {
-      backgroundMusic.play().catch(() => {});
-    }
-    if (audioContext && audioContext.state === 'suspended') {
-      audioContext.resume();
-    }
-    document.body.removeEventListener('click', unlockAudioOnUserGesture);
-    document.body.removeEventListener('keydown', unlockAudioOnUserGesture);
-  }
-  document.body.addEventListener('click', unlockAudioOnUserGesture);
-  document.body.addEventListener('keydown', unlockAudioOnUserGesture);
+  function changeBackground() {
+    document.body.style.background = backgrounds[currentLevel - 1] || backgrounds[0];
+  }
+
+  function initAudioContext() {
+    if (!audioContext) {
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    }
+ if (audioContext.state === 'suspended') {
+      audioContext.resume();
+    }
+    backgroundMusic.loop = true;
+    backgroundMusic.volume = musicVolume / 100;
+    backgroundMusic.play().catch((e) => {
+      console.warn("Autoplay blocked until user gesture:", e);
+    });
+  }
+
+  function unlockAudioOnUserGesture() {
+    initAudioContext();
+    document.body.removeEventListener('click', unlockAudioOnUserGesture);
+    document.body.removeEventListener('keydown', unlockAudioOnUserGesture);
+  }
+
+  function playMoveSound() {
+    if (!sfxEnabled) return;
+    const moveSound = document.getElementById("move-sound");
+    moveSound.volume = sfxVolume / 100;
+    moveSound.currentTime = 0;
+    moveSound.play().catch(() => { });
+  }
+
+  function playWinSound() {
+    if (!sfxEnabled) return;
+    const winSound = document.getElementById("win-sound");
+    winSound.volume = sfxVolume / 100;
+    winSound.currentTime = 0;
+    winSound.play().catch(() => { });
+  }
+
+  window.onload = () => {
+    loadSettings();
+    if (usernameStored) {
+      document.getElementById("start-button").disabled = false;
+    }
+    updateTopButtonsVisibility(document.querySelector(".screen.active").id);
+    showLevels();
+  };
+
+  document.body.addEventListener('click', unlockAudioOnUserGesture);
+  document.body.addEventListener('keydown', unlockAudioOnUserGesture);
 
 </script>
 </body>
 </html>
-
