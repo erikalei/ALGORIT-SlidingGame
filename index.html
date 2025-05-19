@@ -6,12 +6,20 @@
   <title>NUMSHIFT - Sliding Puzzle Game</title>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <style>
+    .hint-tile {
+      outline: 3px solid #ffd700 !important;
+      box-shadow: 0 0 12px #ffd700;
+      z-index: 2;
+    }
+    #timer-row { margin: 0 0 8px 0; }
+  </style>
 </head>
 <body>
 
 <div class="top-right-buttons" id="global-top-right-buttons">
-  <button class="button" onclick="goBack()">⬅️ Back</button>
-  <button class="button" onclick="openSettings()">⚙️ Settings</button>
+  <button class="button" id="back-button" onclick="goBack()">⬅️ Back</button>
+  <button class="button" id="settings-button" onclick="openSettings()">⚙️ Settings</button>
 </div>
 
 <div id="welcome-screen" class="screen active">
@@ -35,32 +43,34 @@
   <div id="leaderboard-section">
     <div id="leaderboard-title">🏆 Leaderboard (Best Times & Moves)</div>
     <table id="leaderboard-table">
-      <thead>
-        <tr>
-          <th>Level</th>
-          <th>Time (s)</th>
-          <th>Moves</th>
-        </tr>
-      </thead>
-      <tbody id="leaderboard-body"></tbody>
-    </table>
+  <thead>
+    <tr>
+      <th>Level</th>
+      <th>Time (s)</th>
+      <th>Moves</th>
+      <th>Score</th>
+    </tr>
+  </thead>
+  <tbody id="leaderboard-body"></tbody>
+</table>
   </div>
 </div>
 
 <div id="game-screen" class="screen">
   <h2>🧠 Puzzle In Progress</h2>
   <p>Moves: <span id="move-counter">0</span></p>
-  <p>Time: <span id="timer">0</span> seconds</p>
+  <p id="timer-row">Time: <span id="timer">0</span> </p>
   <div class="grid" id="grid"></div>
   <div style="display: flex; justify-content: center; flex-wrap: wrap; gap:10px; margin-top: 5px;">
     <button class="button" id="undo-button" onclick="undoMove()" disabled>↩️ Undo Move</button>
     <button class="button" id="pause-button" onclick="togglePause()">⏸️ Pause Timer</button>
     <button class="button" id="skip-button" onclick="skipLevel()">⏭️ Skip Level</button>
-    <button class="button" id="show-solution-button" onclick="showSolution()">🔍 Show Solution</button>
+    <button class="button" id="shuffle-button" onclick="shuffleTiles()">🔀 Shuffle</button>
     <button class="button" onclick="resetGame()">🔁 Reset</button>
   </div>
-  <audio id="move-sound" src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAIlYAAESsAAACABAAZGF0YRAAAAAA"></audio>
-  <audio id="win-sound" src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAIlYAAESsAAACABAAZGF0YRAAAAAA"></audio>
+  <audio id="move-sound" src="assets/audio/move.mp3" preload="auto"></audio>
+  <audio id="win-sound" src="assets/audio/win.mp3" preload="auto"></audio>
+  <audio id="lose-sound" src="assets/audio/lose.mp3" preload="auto"></audio>
 </div>
 
 <div id="settings-screen" class="screen">
@@ -84,6 +94,9 @@
     <label for="sfx-toggle" style="margin:0;">🔈 Sound Effects: </label>
     <input type="checkbox" id="sfx-toggle" checked />
   </div>
+  <div class="settings-section">
+    <button class="button" id="show-solution-button" onclick="showSolution()">🔍 Show Solution</button>
+  </div>
   <div style="width: 100%; text-align: left; margin-bottom: 15px;">
     <label>❓ How to Play:</label>
     <p style="font-size: 14px; line-height: 1.4;">
@@ -96,10 +109,11 @@
   <div style="width: 100%; text-align: left;">
     <label>📌 Additional Features:</label>
     <ul style="font-size: 14px; line-height: 1.4;">
-      <li>Show Solution to briefly preview the solved puzzle.</li>
+      <li>Show Solution to briefly preview the solved puzzle (in Settings).</li>
       <li>Pause and resume the timer at any time.</li>
       <li>Undo one move to correct mistakes.</li>
       <li>Skip current level to advance.</li>
+      <li>Shuffle the puzzle at any time.</li>
     </ul>
   </div>
 </div>
@@ -122,487 +136,685 @@
     Your browser does not support the audio element.
 </audio>
 
+<!-- Floating message for notifications -->
+<div id="float-message" style="display:none;position:fixed;top:30px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:12px 30px;border-radius:8px;z-index:9999;font-size:18px;box-shadow:0 2px 12px #0003;transition:opacity 0.3s;"></div>
+<!-- Overlay for win/lose effect -->
+<div id="effect-overlay" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:9998;pointer-events:none;"></div>
+
 <script>
-  let difficulty = "easy";
-  let maxLevel = 5;
-  let completedLevels = 1;
-  let currentLevel = 1;
-  let gridSize = 3;
-  let tiles = [];
-  let emptyTile = {};
-  let moveCounter = 0;
-  let timeElapsed = 0;
-  let timer;
-  let timerPaused = false;
-  let lastMove = null;
-  let usernameStored = "";
-  let screenHistory = [];
+let difficulty = "easy";
+let maxLevel = 5;
+let currentLevel = 1;
+let gridSize = 3;
+let tiles = [];
+let emptyTile = {};
+let moveCounter = 0;
+let timeElapsed = 0;
+let timer;
+let timerPaused = false;
+let lastMove = null;
+let usernameStored = "";
+let screenHistory = [];
+let score = 0;
 
-  let sfxEnabled = true;
-  let sfxVolume = 50;
+let sfxEnabled = true;
+let sfxVolume = 50;
+let musicVolume = 50;
 
-  let backgrounds = [
-  "linear-gradient(135deg, #001933, #002a4d)",      // darker navy blue
-  "linear-gradient(135deg, #3b006b, #6f21c2)",      // darker indigo-violet
-  "linear-gradient(135deg, #cc654c, #d68a5e)",      // darker peach-orange
-  "linear-gradient(135deg, #009acc, #005bb5)",      // darker cyan-blue
-  "linear-gradient(135deg, #e699a8, #e6b3a0)"        // darker pink-beige
+let backgrounds = [
+  "linear-gradient(135deg, #001933, #002a4d)",
+  "linear-gradient(135deg, #3b006b, #6f21c2)",
+  "linear-gradient(135deg, #cc654c, #d68a5e)",
+  "linear-gradient(135deg, #009acc, #005bb5)",
+  "linear-gradient(135deg, #e699a8, #e6b3a0)"
 ];
-  const backgroundMusic = document.getElementById("background-music");
-  let audioContext;
+const defaultBackground = "linear-gradient(135deg, #001f3f, #003366)";
+const backgroundMusic = document.getElementById("background-music");
+let audioContext;
 
-  // Enable start button on input username
-  document.getElementById("username").addEventListener("input", function () {
-    const username = this.value.trim();
-    document.getElementById("start-button").disabled = username === "";
-  });
+document.getElementById("username").addEventListener("input", function () {
+  const username = this.value.trim();
+  document.getElementById("start-button").disabled = username === "";
+});
 
-  // Start game setup from welcome screen - store username and go to player screen
-  function startGameSetup() {
-    const usernameInput = document.getElementById("username");
-    const username = usernameInput.value.trim();
-    if (username === "") {
-      alert("Please enter a username to start the game.");
-      return;
-    }
-    usernameStored = username;
-    localStorage.setItem('gameUsername', usernameStored);
-    document.getElementById("player-name").textContent = usernameStored;
-    switchScreen("welcome-screen", "player-screen");
+function startGameSetup() {
+  const usernameInput = document.getElementById("username");
+  const username = usernameInput.value.trim();
+  if (username === "") {
+    alert("Please enter a username to start the game.");
+    return;
   }
+  usernameStored = username;
+  localStorage.setItem('gameUsername', usernameStored);
+  document.getElementById("player-name").textContent = usernameStored;
+  switchScreen("welcome-screen", "player-screen");
+  setDefaultBackground();
+}
 
-  function switchScreen(from, to) {
-    document.getElementById(from).classList.remove("active");
-    document.getElementById(to).classList.add("active");
-    updateTopButtonsVisibility (to);
+function switchScreen(from, to) {
+  document.getElementById(from).classList.remove("active");
+  document.getElementById(to).classList.add("active");
+  updateTopButtonsVisibility(to);
+
+  // Restore default background when going to welcome or player screen
+  if (to === "welcome-screen" || to === "player-screen" || to === "levels-screen") {
+    setDefaultBackground();
   }
+}
 
-  function updateTopButtonsVisibility(screenId) {
-    const backButton = document.getElementById("back-button");
-    const settingsButton = document.getElementById("settings-button");
-    if (!backButton || !settingsButton) return;
+function updateTopButtonsVisibility(screenId) {
+  const backButton = document.getElementById("back-button");
+  const settingsButton = document.getElementById("settings-button");
+  if (!backButton || !settingsButton) return;
 
-    if (screenId === "settings-screen" || screenId === "game-screen") {
-      backButton.style.display = "inline-block";
-      settingsButton.style.display = "none";
+  if (screenId === "welcome-screen") {
+    backButton.style.display = "none";
+    settingsButton.style.display = "inline-block";
+  } else if (screenId === "settings-screen") {
+    backButton.style.display = "inline-block";
+    settingsButton.style.display = "none";
+  } else {
+    backButton.style.display = "inline-block";
+    settingsButton.style.display = "inline-block";
+  }
+}
+function goBack() {
+  if (screenHistory.length === 0) {
+    switchScreen(document.querySelector(".screen.active").id, "welcome-screen");
+    return;
+  }
+  const lastScreen = screenHistory.pop();
+  switchScreen(document.querySelector(".screen.active").id, lastScreen);
+}
+
+function selectDifficulty(selected) {
+  difficulty = selected;
+  screenHistory.push("player-screen");
+  switchScreen("player-screen", "levels-screen");
+  showLevels();
+}
+
+function showLevels() {
+  let levelsDiv = document.getElementById("levels");
+  levelsDiv.innerHTML = "";
+  const unlocked = getCompletedLevels();
+  for (let i = 1; i <= maxLevel; i++) {
+    let btn = document.createElement("button");
+    btn.innerText = `Level ${i}`;
+    btn.className = "button";
+    btn.disabled = i > unlocked;
+    btn.onclick = () => startGame(i);
+    levelsDiv.appendChild(btn);
+  }
+  updateLeaderboard();
+}
+function checkWin() {
+  for (let i = 0; i < tiles.length; i++) {
+    if (i === tiles.length - 1) {
+      if (!tiles[i].classList.contains("empty")) return;
     } else {
-      backButton.style.display = "none";
-      settingsButton.style.display = "inline-block";
+      if (tiles[i].textContent != i + 1) return;
     }
   }
-
-  function goBack() {
-    if (screenHistory.length === 0) {
-      switchScreen(document.querySelector(".screen.active").id, "welcome-screen");
-      return;
-    }
-    const lastScreen = screenHistory.pop();
-    switchScreen(document.querySelector(".screen.active").id, lastScreen);
-  }
-
-  function selectDifficulty(selected) {
-    difficulty = selected;
-    screenHistory.push("player-screen");
-    switchScreen("player-screen", "levels-screen");
-    showLevels();
-  }
-
-  function showLevels() {
-    let levelsDiv = document.getElementById("levels");
-    levelsDiv.innerHTML = "";
-    for (let i = 1; i <= maxLevel; i++) {
-      let btn = document.createElement("button");
-      btn.innerText = `Level ${i}`;
-      btn.className = "button";
-      btn.disabled = i > completedLevels;
-      btn.onclick = () => startGame(i);
-      levelsDiv.appendChild(btn);
-    }
-    updateLeaderboard();
-  }
-
-  function startGame(level) {
-    currentLevel = level;
-    gridSize = level + 2;
-    screenHistory.push("levels-screen");
-    switchScreen(document.querySelector(".screen.active").id, "game-screen");
-    changeBackground();
-    initGrid();
-    startTimer();
-  }
-
-  function initGrid() {
-    let grid = document.getElementById("grid");
-    grid.innerHTML = "";
-    grid.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
-    tiles = [];
-    let numbers = Array.from({ length: gridSize * gridSize }, (_, i) => i);
-    shuffleArray(numbers);
-    numbers.forEach((num, index) => {
-      let tile = document.createElement("div");
-      tile.classList.add("tile");
-      if (num === 0) {
-        tile.classList.add("empty");
-        emptyTile = { index, element: tile };
-        tile.textContent = "";
-        tile.onclick = null;
-      } else {
-        tile.textContent = num;
-        tile.onclick = () => moveTile(index);
-      }
-      tiles.push(tile);
-      grid.appendChild(tile);
-    });
-    moveCounter = 0;
-    timeElapsed = 0;
-    timerPaused = false;
-    document.getElementById("move-counter").textContent = moveCounter;
-    document.getElementById("timer").textContent = timeElapsed;
-    lastMove = null;
-    document.getElementById("undo-button").disabled = true;
-    document.getElementById("pause-button").textContent = "⏸️ Pause Timer";
-  }
-
-  function moveTile(index) {
-    if (timerPaused) return;
-    let row = Math.floor(index / gridSize);
-    let col = index % gridSize;
-    let emptyRow = Math.floor(emptyTile.index / gridSize);
-    let emptyCol = emptyTile.index % gridSize;
-    if ((Math.abs(row - emptyRow) === 1 && col === emptyCol) ||
-        (Math.abs(col - emptyCol) === 1 && row === emptyRow)) {
-      swapTiles(index, emptyTile.index);
-      moveCounter++;
-      document.getElementById("move-counter").textContent = moveCounter;
-      lastMove = { fromIndex: index, toIndex: emptyTile.index };
-      document.getElementById("undo-button").disabled = false;
-      playMoveSound();
-    }
-  }
-
-  function swapTiles(tileIndex, emptyIndex) {
-    let tempText = tiles[tileIndex].textContent;
-    tiles[tileIndex].textContent = "";
-    tiles[tileIndex].classList.add("empty");
-    tiles[tileIndex].onclick = null;
-    tiles[emptyIndex].textContent = tempText;
-    tiles[emptyIndex].classList.remove("empty");
-    tiles[emptyIndex].onclick = () => moveTile(emptyIndex);
-    emptyTile.index = tileIndex;
-    emptyTile.element = tiles[tileIndex];
-    checkWin();
-  }
-
-  function undoMove() {
-    if (!lastMove || timerPaused) return;
-    swapTiles(lastMove.toIndex, lastMove.fromIndex);
-    moveCounter = Math.max(0, moveCounter - 1);
-    document.getElementById("move-counter").textContent = moveCounter;
-    lastMove = null;
-    document.getElementById("undo-button").disabled = true; 
-    playMoveSound();
-  }
-
-  function checkWin() {
-    for (let i = 0; i < tiles.length; i++) {
-      if (i === tiles.length - 1) {
-        if (!tiles[i].classList.contains("empty")) return;
-      } else {
-        if (tiles[i].textContent != i + 1) return;
-      }
-    }
-    clearInterval(timer);
-    playWinSound();
+  clearInterval(timer);
+  playWinSound();
+  showEffect("win");
+  setTimeout(() => {
     showCongratulationsModal();
-    completedLevels = Math.max(completedLevels, currentLevel + 1);
+    // Only unlock next level for this difficulty
+    const unlocked = getCompletedLevels();
+    if (currentLevel + 1 > unlocked && currentLevel < maxLevel) {
+      setCompletedLevels(currentLevel + 1);
+    }
     updateLeaderboardOnWin();
     showLevels();
-  }
+  }, 900);
+}
+function startGame(level) {
+  currentLevel = level;
+  gridSize = level + 2;
+  screenHistory.push("levels-screen");
+  switchScreen(document.querySelector(".screen.active").id, "game-screen");
+  changeBackground();
+  initGrid();
+  startTimer();
 
-  function shuffleArray(arr) {
-    for (let i = arr.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [arr[i], arr[j]] = [arr[j], arr[i]];
+  // Unlock this level if not already unlocked
+  const unlocked = getCompletedLevels();
+  if (level > unlocked) {
+    setCompletedLevels(level);
+  }
+}
+
+function initGrid() {
+  let grid = document.getElementById("grid");
+  grid.innerHTML = "";
+  grid.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
+  tiles = [];
+  let numbers;
+  do {
+    numbers = Array.from({ length: gridSize * gridSize }, (_, i) => i);
+    shuffleArray(numbers);
+  } while (!isSolvable(numbers, gridSize));
+  numbers.forEach((num, index) => {
+    let tile = document.createElement("div");
+    tile.classList.add("tile");
+    if (num === 0) {
+      tile.classList.add("empty");
+      emptyTile = { index, element: tile };
+      tile.textContent = "";
+      tile.onclick = null;
+    } else {
+      tile.textContent = num;
+      tile.onclick = () => moveTile(index);
+    }
+    tiles.push(tile);
+    grid.appendChild(tile);
+  });
+  moveCounter = 0;
+  timeElapsed = 0;
+  timerPaused = false;
+  score = 0;
+  document.getElementById("move-counter").textContent = moveCounter;
+  document.getElementById("score-row")?.remove();
+  // Add score display
+  let scoreRow = document.createElement("p");
+  scoreRow.id = "score-row";
+  scoreRow.innerHTML = 'Score: <span id="score">0</span>';
+  grid.parentNode.insertBefore(scoreRow, grid.nextSibling);
+
+  // Timer display logic
+  const timerElem = document.getElementById("timer");
+  const timerRow = document.getElementById("timer-row");
+  if (difficulty === "easy") {
+    timerRow.style.display = "none";
+  } else {
+    timerRow.style.display = "";
+    timerElem.textContent = (difficulty === "medium") ? "20:00" : "15:00";
+  }
+  lastMove = null;
+  document.getElementById("undo-button").disabled = true;
+  document.getElementById("pause-button").textContent = "⏸️ Pause Timer";
+}
+
+function isSolvable(numbers, gridSize) {
+  let invCount = 0;
+  for (let i = 0; i < numbers.length - 1; i++) {
+    for (let j = i + 1; j < numbers.length; j++) {
+      if (numbers[i] && numbers[j] && numbers[i] > numbers[j]) invCount++;
     }
   }
+  if (gridSize % 2 === 1) {
+    return invCount % 2 === 0;
+  } else {
+    let blankRow = gridSize - Math.floor(numbers.indexOf(0) / gridSize);
+    if (blankRow % 2 === 0) {
+      return invCount % 2 === 1;
+    } else {
+      return invCount % 2 === 0;
+    }
+  }
+}
 
-  function startTimer() {
-    clearInterval(timer);
-    timerPaused = false;
-    timeElapsed = 0;
-    document.getElementById("pause-button").textContent = "⏸️ Pause Timer";
-    timer = setInterval(() => {
+function moveTile(index) {
+  if (timerPaused) return;
+  let row = Math.floor(index / gridSize);
+  let col = index % gridSize;
+  let emptyRow = Math.floor(emptyTile.index / gridSize);
+  let emptyCol = emptyTile.index % gridSize;
+  if ((Math.abs(row - emptyRow) === 1 && col === emptyCol) ||
+      (Math.abs(col - emptyCol) === 1 && row === emptyRow)) {
+    swapTiles(index, emptyTile.index);
+    moveCounter++;
+    document.getElementById("move-counter").textContent = moveCounter;
+    lastMove = { fromIndex: index, toIndex: emptyTile.index };
+    document.getElementById("undo-button").disabled = false;
+    playMoveSound();
+    updateScore();
+  }
+}
+
+function swapTiles(tileIndex, emptyIndex) {
+  let tempText = tiles[tileIndex].textContent;
+  tiles[tileIndex].textContent = "";
+  tiles[tileIndex].classList.add("empty");
+  tiles[tileIndex].onclick = null;
+  tiles[emptyIndex].textContent = tempText;
+  tiles[emptyIndex].classList.remove("empty");
+  tiles[emptyIndex].onclick = () => moveTile(emptyIndex);
+  emptyTile.index = tileIndex;
+  emptyTile.element = tiles[tileIndex];
+  checkWin();
+}
+
+function undoMove() {
+  if (!lastMove || timerPaused) return;
+  swapTiles(lastMove.toIndex, lastMove.fromIndex);
+  moveCounter = Math.max(0, moveCounter - 1);
+  document.getElementById("move-counter").textContent = moveCounter;
+  lastMove = null;
+  document.getElementById("undo-button").disabled = true; 
+  playMoveSound();
+  updateScore();
+}
+
+function shuffleTiles() {
+  // Only shuffle if not solved
+  let numbers;
+  do {
+    numbers = Array.from({ length: gridSize * gridSize }, (_, i) => i);
+    shuffleArray(numbers);
+  } while (!isSolvable(numbers, gridSize) || isSolved(numbers));
+  // Rebuild grid with new shuffled numbers
+  numbers.forEach((num, index) => {
+    let tile = tiles[index];
+    if (num === 0) {
+      tile.classList.add("empty");
+      emptyTile = { index, element: tile };
+      tile.textContent = "";
+      tile.onclick = null;
+    } else {
+      tile.classList.remove("empty");
+      tile.textContent = num;
+      tile.onclick = () => moveTile(index);
+    }
+  });
+  moveCounter = 0;
+  document.getElementById("move-counter").textContent = moveCounter;
+  lastMove = null;
+  document.getElementById("undo-button").disabled = true;
+  updateScore();
+}
+
+function isSolved(numbers) {
+  for (let i = 0; i < numbers.length - 1; i++) {
+    if (numbers[i] !== i + 1) return false;
+  }
+  return numbers[numbers.length - 1] === 0;
+}
+
+function shuffleArray(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+
+function startTimer() {
+  clearInterval(timer);
+  timerPaused = false;
+  timeElapsed = 0;
+  const timerElem = document.getElementById("timer");
+  const timerRow = document.getElementById("timer-row");
+  document.getElementById("pause-button").textContent = "⏸️ Pause Timer";
+
+  if (difficulty === "easy") {
+    timerRow.style.display = "none";
+    return;
+  }
+
+  timerRow.style.display = "";
+  let timeLimit = (difficulty === "medium") ? 20 * 60 : 15 * 60;
+  let remaining = timeLimit;
+  timerElem.textContent = formatTime(remaining);
+
+  timer = setInterval(() => {
+    if (!timerPaused) {
+      remaining--;
       timeElapsed++;
-      document.getElementById("timer").textContent = timeElapsed;
-    }, 1000);
-  }
+      timerElem.textContent = formatTime(remaining);
+      updateScore(remaining);
+      if (remaining <= 0) {
+        clearInterval(timer);
+        playLoseSound();
+        showEffect("lose");
+        setTimeout(() => {
+          alert("⏰ Time's up! Try again.");
+          resetGame();
+        }, 900);
+      }
+    }
+  }, 1000);
+}
 
-  function togglePause() {
-    if (!timer) return;
-    if (timerPaused) {
-      timerPaused = false;
-      document.getElementById("pause-button").textContent = "⏸️ Pause Timer";
-      timer = setInterval(() => {
-        timeElapsed++;
-        document.getElementById("timer").textContent = timeElapsed;
-      }, 1000);
+function formatTime(seconds) {
+  const min = Math.floor(seconds / 60);
+  const sec = seconds % 60;
+  return `${min}:${sec.toString().padStart(2, "0")}`;
+}
+
+function resetGame() {
+  clearInterval(timer);
+  initGrid();
+  startTimer();
+  lastMove = null;
+  document.getElementById("undo-button").disabled = true;
+}
+
+function togglePause() {
+  if (!timer || difficulty === "easy") return;
+  timerPaused = !timerPaused;
+  document.getElementById("pause-button").textContent = timerPaused ? "▶️ Resume Timer" : "⏸️ Pause Timer";
+}
+
+function skipLevel() {
+  closeModal();
+  if (currentLevel < maxLevel) {
+    currentLevel++;
+    startGame(currentLevel);
+  } else {
+    alert("You have reached the last level.");
+  }
+}
+
+function showSolution() {
+  disableGameControls(true);
+  const backupTexts = tiles.map(t => t.textContent);
+  const backupClasses = tiles.map(t => t.className);
+  for (let i = 0; i < tiles.length; i++) {
+    if (i === tiles.length - 1) {
+      tiles[i].textContent = "";
+      tiles[i].className = "tile empty";
+      tiles[i].onclick = null;
     } else {
-      timerPaused = true;
-      document.getElementById("pause-button").textContent = "▶️ Resume Timer";
-      clearInterval(timer);
+      tiles[i].textContent = (i + 1).toString();
+      tiles[i].className = "tile";
+      tiles[i].onclick = () => moveTile(i);
     }
   }
-
-  function skipLevel() {
-    closeModal();
-    if (currentLevel < maxLevel) {
-      currentLevel++;
-      startGame(currentLevel);
-    } else {
-      alert("You have reached the last level.");
-    }
-  }
-
-  function resetGame() {
-    clearInterval(timer);
-    initGrid();
-    startTimer();
-    lastMove = null;
-    document.getElementById("undo-button").disabled = true;
-  }
-
-  function showSolution() {
-    disableGameControls(true);
-    const backupTexts = tiles.map(t => t.textContent);
-    const backupClasses = tiles.map(t => t.className);
+  setTimeout(() => {
     for (let i = 0; i < tiles.length; i++) {
-      if (i === tiles.length - 1) {
-        tiles[i].textContent = "";
-        tiles[i].className = "tile empty";
-        tiles[i].onclick = null;
-      } else {
-        tiles[i].textContent = (i + 1).toString();
-        tiles[i].className = "tile";
+      tiles[i].textContent = backupTexts[i];
+      tiles[i].className = backupClasses[i];
+      if (!tiles[i].classList.contains("empty")) {
         tiles[i].onclick = () => moveTile(i);
-      }
-    }
-    setTimeout(() => {
-      for (let i = 0; i < tiles.length; i++) {
-        tiles[i].textContent = backupTexts[i];
-        tiles[i].className = backupClasses[i];
-        if (!tiles[i].classList.contains("empty")) {
-          tiles[i].onclick = () => moveTile(i);
-        } else {
-          tiles[i].onclick = null;
-          emptyTile = { index: i, element: tiles[i] };
-        }
-      }
-      disableGameControls(false);
-    }, 3000);
-  }
-
-  function disableGameControls(disable) {
-    document.getElementById("undo-button").disabled = disable || lastMove === null;
-    document.getElementById("pause-button").disabled = disable;
-    document.querySelector("#game-screen button[onclick='showSolution()']").disabled = disable;
-    document.querySelector("#game-screen button[onclick='resetGame()']").disabled = disable;
-    document.getElementById("skip-button").disabled = disable;
-  }
-
-  function updateLeaderboard() {
-    const tbody = document.getElementById("leaderboard-body");
-    tbody.innerHTML = "";
-    const data = getLeaderboardData();
-    for (let lvl = 1; lvl <= maxLevel; lvl++) {
-      let tr = document.createElement("tr");
-      let tdLevel = document.createElement("td");
-      tdLevel.textContent = "Level " + lvl;
-      let tdTime = document.createElement("td");
-      let tdMoves = document.createElement("td");
-      if (data[lvl]) {
-        tdTime.textContent = data[lvl].time;
-        tdMoves.textContent = data[lvl].moves;
       } else {
-        tdTime.textContent = "-";
-        tdMoves.textContent = "-";
-      }
-      tr.appendChild(tdLevel);
-      tr.appendChild(tdTime);
-      tr.appendChild(tdMoves);
-      tbody.appendChild(tr);
-    }
-  }
-
-  function getLeaderboardData() {
-    let key = `leaderboard_${difficulty}`;
-    let stored = localStorage.getItem(key);
-    if (stored) {
-      try {
-        return JSON.parse(stored);
-      } catch (e) {
-        return {};
+        tiles[i].onclick = null;
+        emptyTile = { index: i, element: tiles[i] };
       }
     }
-    return {};
+    disableGameControls(false);
+  }, 3000);
+}
+
+function disableGameControls(disable) {
+  document.getElementById("undo-button").disabled = disable || lastMove === null;
+  document.getElementById("pause-button").disabled = disable;
+  document.getElementById("show-solution-button").disabled = disable;
+  document.querySelector("#game-screen button[onclick='resetGame()']").disabled = disable;
+  document.getElementById("skip-button").disabled = disable;
+  document.getElementById("shuffle-button").disabled = disable;
+}
+
+function updateScore(remainingTime = null) {
+  // Example scoring: (remainingTime * 10) + ((maxMoves - moveCounter) * 5)
+  let base = 0;
+  if (difficulty === "easy") {
+    base = Math.max(0, 1000 - moveCounter * 10);
+  } else {
+    let time = remainingTime !== null ? remainingTime : (difficulty === "medium" ? 20 * 60 : 15 * 60);
+    base = Math.max(0, (time * 10) + ((gridSize * gridSize * 2 - moveCounter) * 5));
   }
+  score = base;
+  let scoreElem = document.getElementById("score");
+  if (scoreElem) scoreElem.textContent = score;
+}
+function getCompletedLevels() {
+  return parseInt(localStorage.getItem(`completedLevels_${difficulty}`)) || 1;
+}
 
-  function updateLeaderboardOnWin() {
-    let data = getLeaderboardData();
-    let level = currentLevel;
-    if (!data[level] || timeElapsed < data[level].time || (timeElapsed === data[level].time && moveCounter < data[level].moves)) {
-      data[level] = { time: timeElapsed, moves: moveCounter };
-      let key = `leaderboard_${difficulty}`;
-      localStorage.setItem(key, JSON.stringify(data));
-    }
-  }
+function setCompletedLevels(level) {
+  localStorage.setItem(`completedLevels_${difficulty}`, level);
+}
 
-  function loadSettings() {
-    const savedUsername = localStorage.getItem('gameUsername');
-    if (savedUsername) {
-      usernameStored = savedUsername;
-      document.getElementById("player-name").textContent = usernameStored;
-      document.getElementById("username").value = usernameStored;
-      document.getElementById("start-button").disabled = false;
-    }
-    const storedVolume = localStorage.getItem('musicVolume');
-    if (storedVolume !== null) {
-      musicVolume = parseInt(storedVolume);
-    }
-    const storedSFX = localStorage.getItem('sfxEnabled');
-    if (storedSFX !== null) {
-      sfxEnabled = storedSFX === 'true';
-    }
-    const storedSFXVolume = localStorage.getItem('sfxVolume');
-    if (storedSFXVolume !== null) {
-      sfxVolume = parseInt(storedSFXVolume);
-    }
-    document.getElementById('music-volume').value = musicVolume;
-    document.getElementById('music-volume-label').textContent = musicVolume + '%';
-    document.getElementById('sfx-toggle').checked = sfxEnabled;
-    document.getElementById('sfx-volume').value = sfxVolume;
-    document.getElementById('sfx-volume-label').textContent = sfxVolume + '%';
-    backgroundMusic.volume = musicVolume / 100;
-  }
-
-  function saveSettings() {
-    localStorage.setItem('musicVolume', musicVolume);
-    localStorage.setItem('sfxEnabled', sfxEnabled);
-    localStorage.setItem('sfxVolume', sfxVolume);
-  }
-
-  function openSettings() {
-    const currentScreen = document.querySelector(".screen.active").id;
-    screenHistory.push(currentScreen);
-    switchScreen(currentScreen, "settings-screen");
-  }
-
-  document.getElementById('music-volume').addEventListener('input', (e) => {
-    musicVolume = parseInt(e.target.value);
-    document.getElementById('music-volume-label').textContent = musicVolume + '%';
-    backgroundMusic.volume = musicVolume / 100;
-    saveSettings();
-  });
-
-  document.getElementById('sfx-toggle').addEventListener('change', (e) => {
-    sfxEnabled = e.target.checked;
-    saveSettings();
-  });
-
-  document.getElementById('sfx-volume').addEventListener('input', (e) => {
-    sfxVolume = parseInt(e.target.value);
-    document.getElementById('sfx-volume-label').textContent = sfxVolume + '%';
-    saveSettings();
-  });
-
-  function changeUsername() {
-    const newName = document.getElementById("change-username").value.trim();
-    if (newName === "") {
-      alert("Username cannot be empty.");
-      return;
-    }
-    usernameStored = newName;
-    localStorage.setItem('gameUsername', usernameStored);
-    document.getElementById("player-name").textContent = usernameStored;
-    alert("Username changed successfully.");
-  }
-
-  function showCongratulationsModal() {
-    document.getElementById("modal-level").textContent = currentLevel;
-    document.getElementById("modal-time").textContent = timeElapsed;
-    document.getElementById("modal-moves").textContent = moveCounter;
-    document.getElementById("congratulations-modal").style.display = "flex";
-  }
-
-  function closeModal() {
-    document.getElementById("congratulations-modal").style.display = "none";
-  }
-
-  function nextLevel() {
-    closeModal();
-    if (currentLevel < maxLevel) {
-      currentLevel++;
-      startGame(currentLevel);
+function updateLeaderboard() {
+  const tbody = document.getElementById("leaderboard-body");
+  tbody.innerHTML = "";
+  const data = getLeaderboardData();
+  for (let lvl = 1; lvl <= maxLevel; lvl++) {
+    let tr = document.createElement("tr");
+    let tdLevel = document.createElement("td");
+    tdLevel.textContent = "Level " + lvl;
+    let tdTime = document.createElement("td");
+    let tdMoves = document.createElement("td");
+    let tdScore = document.createElement("td");
+    if (data[lvl]) {
+      tdTime.textContent = data[lvl].time;
+      tdMoves.textContent = data[lvl].moves;
+      tdScore.textContent = data[lvl].score || "-";
     } else {
-      alert("You have reached the last level.");
+      tdTime.textContent = "-";
+      tdMoves.textContent = "-";
+      tdScore.textContent = "-";
+    }
+    tr.appendChild(tdLevel);
+    tr.appendChild(tdTime);
+    tr.appendChild(tdMoves);
+    tr.appendChild(tdScore); // Uncomment if you want to show score in leaderboard
+    tbody.appendChild(tr);
+  }
+}
+
+function getLeaderboardData() {
+  let key = `leaderboard_${difficulty}`;
+  let stored = localStorage.getItem(key);
+  if (stored) {
+    try {
+      return JSON.parse(stored);
+    } catch (e) {
+      return {};
     }
   }
+  return {};
+}
 
-  function goBackToDifficulty() {
-    closeModal();
-    switchScreen(document.querySelector(".screen.active").id, "player-screen");
+function updateLeaderboardOnWin() {
+  let data = getLeaderboardData();
+  let level = currentLevel;
+  if (!data[level] || score > (data[level].score || 0)) {
+    data[level] = { time: timeElapsed, moves: moveCounter, score: score };
+    let key = `leaderboard_${difficulty}`;
+    localStorage.setItem(key, JSON.stringify(data));
   }
+}
 
-  function changeBackground() {
-    document.body.style.background = backgrounds[currentLevel - 1] || backgrounds[0];
+function loadSettings() {
+  const savedUsername = localStorage.getItem('gameUsername');
+  if (savedUsername) {
+    usernameStored = savedUsername;
+    document.getElementById("player-name").textContent = usernameStored;
+    document.getElementById("username").value = usernameStored;
+    document.getElementById("start-button").disabled = false;
   }
-
-  function initAudioContext() {
-    if (!audioContext) {
-      audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    }
- if (audioContext.state === 'suspended') {
-      audioContext.resume();
-    }
-    backgroundMusic.loop = true;
-    backgroundMusic.volume = musicVolume / 100;
-    backgroundMusic.play().catch((e) => {
-      console.warn("Autoplay blocked until user gesture:", e);
-    });
+  const storedVolume = localStorage.getItem('musicVolume');
+  if (storedVolume !== null) {
+    musicVolume = parseInt(storedVolume);
   }
-
-  function unlockAudioOnUserGesture() {
-    initAudioContext();
-    document.body.removeEventListener('click', unlockAudioOnUserGesture);
-    document.body.removeEventListener('keydown', unlockAudioOnUserGesture);
+  const storedSFX = localStorage.getItem('sfxEnabled');
+  if (storedSFX !== null) {
+    sfxEnabled = storedSFX === 'true';
   }
-
-  function playMoveSound() {
-    if (!sfxEnabled) return;
-    const moveSound = document.getElementById("move-sound");
-    moveSound.volume = sfxVolume / 100;
-    moveSound.currentTime = 0;
-    moveSound.play().catch(() => { });
+  const storedSFXVolume = localStorage.getItem('sfxVolume');
+  if (storedSFXVolume !== null) {
+    sfxVolume = parseInt(storedSFXVolume);
   }
+  document.getElementById('music-volume').value = musicVolume;
+  document.getElementById('music-volume-label').textContent = musicVolume + '%';
+  document.getElementById('sfx-toggle').checked = sfxEnabled;
+  document.getElementById('sfx-volume').value = sfxVolume;
+  document.getElementById('sfx-volume-label').textContent = sfxVolume + '%';
+  backgroundMusic.volume = musicVolume / 100;
+}
 
-  function playWinSound() {
-    if (!sfxEnabled) return;
-    const winSound = document.getElementById("win-sound");
-    winSound.volume = sfxVolume / 100;
-    winSound.currentTime = 0;
-    winSound.play().catch(() => { });
+function saveSettings() {
+  localStorage.setItem('musicVolume', musicVolume);
+  localStorage.setItem('sfxEnabled', sfxEnabled);
+  localStorage.setItem('sfxVolume', sfxVolume);
+}
+
+function openSettings() {
+  const currentScreen = document.querySelector(".screen.active").id;
+  screenHistory.push(currentScreen);
+  switchScreen(currentScreen, "settings-screen");
+}
+
+document.getElementById('music-volume').addEventListener('input', (e) => {
+  musicVolume = parseInt(e.target.value);
+  document.getElementById('music-volume-label').textContent = musicVolume + '%';
+  backgroundMusic.volume = musicVolume / 100;
+  saveSettings();
+});
+
+document.getElementById('sfx-toggle').addEventListener('change', (e) => {
+  sfxEnabled = e.target.checked;
+  saveSettings();
+});
+
+document.getElementById('sfx-volume').addEventListener('input', (e) => {
+  sfxVolume = parseInt(e.target.value);
+  document.getElementById('sfx-volume-label').textContent = sfxVolume + '%';
+  saveSettings();
+});
+
+function showFloatMessage(msg, color = "#222") {
+  const floatMsg = document.getElementById("float-message");
+  floatMsg.textContent = msg;
+  floatMsg.style.background = color;
+  floatMsg.style.display = "block";
+  floatMsg.style.opacity = "1";
+  setTimeout(() => {
+    floatMsg.style.opacity = "0";
+    setTimeout(() => { floatMsg.style.display = "none"; }, 400);
+  }, 1800);
+}
+
+function showEffect(type) {
+  const overlay = document.getElementById("effect-overlay");
+  overlay.innerHTML = "";
+  overlay.style.display = "block";
+  if (type === "win") {
+    overlay.innerHTML = `<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:60px;color:#ffd700;text-shadow:0 0 20px #fff,0 0 40px #ffd700;">🎉</div>`;
+    overlay.style.background = "rgba(255,255,200,0.25)";
+  } else if (type === "lose") {
+    overlay.innerHTML = `<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:60px;color:#b71c1c;text-shadow:0 0 20px #fff,0 0 40px #b71c1c;">⏰</div>`;
+    overlay.style.background = "rgba(200,0,0,0.18)";
   }
+  setTimeout(() => { overlay.style.display = "none"; }, 1200);
+}
 
-  window.onload = () => {
-    loadSettings();
-    if (usernameStored) {
-      document.getElementById("start-button").disabled = false;
-    }
-    updateTopButtonsVisibility(document.querySelector(".screen.active").id);
-    showLevels();
-  };
+function changeUsername() {
+  const newName = document.getElementById("change-username").value.trim();
+  if (newName === "") {
+    showFloatMessage("Username cannot be empty.", "#b71c1c");
+    return;
+  }
+  usernameStored = newName;
+  localStorage.setItem('gameUsername', usernameStored);
+  document.getElementById("player-name").textContent = usernameStored;
+  showFloatMessage("Username changed successfully!", "#388e3c");
+}
 
-  document.body.addEventListener('click', unlockAudioOnUserGesture);
-  document.body.addEventListener('keydown', unlockAudioOnUserGesture);
+function showCongratulationsModal() {
+  document.getElementById("modal-level").textContent = currentLevel;
+  document.getElementById("modal-time").textContent = timeElapsed;
+  document.getElementById("modal-moves").textContent = moveCounter;
+  // Show score in modal
+  let modal = document.getElementById("congratulations-modal");
+  let scoreElem = document.getElementById("modal-score");
+  if (!scoreElem) {
+    let p = document.createElement("p");
+    p.id = "modal-score";
+    p.innerHTML = `Score: <span>${score}</span>`;
+    modal.querySelector(".modal-content").insertBefore(p, modal.querySelector(".modal-buttons"));
+  } else {
+    scoreElem.innerHTML = `Score: <span>${score}</span>`;
+  }
+  modal.style.display = "flex";
+}
+
+function closeModal() {
+  document.getElementById("congratulations-modal").style.display = "none";
+}
+
+function nextLevel() {
+  closeModal();
+  if (currentLevel < maxLevel) {
+    currentLevel++;
+    startGame(currentLevel);
+  } else {
+    alert("You have reached the last level.");
+  }
+}
+
+function goBackToDifficulty() {
+  closeModal();
+  switchScreen(document.querySelector(".screen.active").id, "player-screen");
+}
+
+function changeBackground() {
+  document.body.style.background = backgrounds[currentLevel - 1] || backgrounds[0];
+}
+
+function setDefaultBackground() {
+  document.body.style.background = defaultBackground;
+}
+
+function initAudioContext() {
+  if (!audioContext) {
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (audioContext.state === 'suspended') {
+    audioContext.resume();
+  }
+  backgroundMusic.loop = true;
+  backgroundMusic.volume = musicVolume / 100;
+  backgroundMusic.play().catch((e) => {
+    // Autoplay might be blocked, that's fine
+  });
+}
+
+function unlockAudioOnUserGesture() {
+  initAudioContext();
+  document.body.removeEventListener('click', unlockAudioOnUserGesture);
+  document.body.removeEventListener('keydown', unlockAudioOnUserGesture);
+}
+
+function playMoveSound() {
+  if (!sfxEnabled) return;
+  const moveSound = document.getElementById("move-sound");
+  moveSound.volume = sfxVolume / 100;
+  moveSound.currentTime = 0;
+  moveSound.play().catch(() => {});
+}
+
+function playWinSound() {
+  if (!sfxEnabled) return;
+  const winSound = document.getElementById("win-sound");
+  winSound.volume = sfxVolume / 100;
+  winSound.currentTime = 0;
+  winSound.play().catch(() => {});
+}
+
+function playLoseSound() {
+  if (!sfxEnabled) return;
+  const loseSound = document.getElementById("lose-sound");
+  loseSound.volume = sfxVolume / 100;
+  loseSound.currentTime = 0;
+  loseSound.play().catch(() => {});
+}
+
+window.onload = () => {
+  loadSettings();
+  if (usernameStored) {
+    document.getElementById("start-button").disabled = false;
+  }
+  updateTopButtonsVisibility(document.querySelector(".screen.active").id);
+  showLevels();
+  setDefaultBackground();
+};
+
+document.body.addEventListener('click', unlockAudioOnUserGesture);
+document.body.addEventListener('keydown', unlockAudioOnUserGesture);
 
 </script>
 </body>

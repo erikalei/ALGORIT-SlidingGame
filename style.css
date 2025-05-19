@@ -261,3 +261,8 @@
   .settings-section input[type=range] {
     width: 100%;
   }
+  .hint-tile{
+    outline: 3px solid #ffd700 !important;
+    box-shadow: 0 0 12px #ffd700;
+    z-index:2;
+  }
