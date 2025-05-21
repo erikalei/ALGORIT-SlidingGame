@@ -48,7 +48,6 @@
       <th>Level</th>
       <th>Time (s)</th>
       <th>Moves</th>
-      <th>Score</th>
     </tr>
   </thead>
   <tbody id="leaderboard-body"></tbody>
@@ -317,11 +316,6 @@ function initGrid() {
   score = 0;
   document.getElementById("move-counter").textContent = moveCounter;
   document.getElementById("score-row")?.remove();
-  // Add score display
-  let scoreRow = document.createElement("p");
-  scoreRow.id = "score-row";
-  scoreRow.innerHTML = 'Score: <span id="score">0</span>';
-  grid.parentNode.insertBefore(scoreRow, grid.nextSibling);
 
   // Timer display logic
   const timerElem = document.getElementById("timer");
@@ -581,16 +575,13 @@ function updateLeaderboard() {
     if (data[lvl]) {
       tdTime.textContent = data[lvl].time;
       tdMoves.textContent = data[lvl].moves;
-      tdScore.textContent = data[lvl].score || "-";
     } else {
       tdTime.textContent = "-";
       tdMoves.textContent = "-";
-      tdScore.textContent = "-";
     }
     tr.appendChild(tdLevel);
     tr.appendChild(tdTime);
     tr.appendChild(tdMoves);
-    tr.appendChild(tdScore); // Uncomment if you want to show score in leaderboard
     tbody.appendChild(tr);
   }
 }
